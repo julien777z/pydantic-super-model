@@ -61,4 +61,4 @@ annotations = user.get_annotated_fields(PrimaryKey)
 ## Run Tests
 
 * Install with the `dev` extra: `pip install pydantic-super-model[dev]`
-* Run tests with `python -m pytest .` or `poetry run pytest .` if using [Poetry](https://python-poetry.org/).
+* Run tests with `pytest .`
