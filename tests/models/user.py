@@ -1,5 +1,5 @@
 from typing import Annotated, Generic, TypeVar
-from super_model import BaseModel
+from super_model import SuperModel
 
 
 class _PrimaryKeyAnnotation:
@@ -10,35 +10,35 @@ PrimaryKey = Annotated[int, _PrimaryKeyAnnotation]
 GenericType = TypeVar("GenericType", bound=int)
 
 
-class User(BaseModel):
+class User(SuperModel):
     """User test model."""
 
     id: PrimaryKey
     name: str
 
 
-class UserNoAnnotations(BaseModel):
+class UserNoAnnotations(SuperModel):
     """User test model without annotations."""
 
     id: int
     name: str
 
 
-class UserWithUnionAnnotation(BaseModel):
+class UserWithUnionAnnotation(SuperModel):
     """User test model with union."""
 
     id: PrimaryKey | str
     name: str
 
 
-class UserWithAnnotatedAnnotation(BaseModel):
+class UserWithAnnotatedAnnotation(SuperModel):
     """User test model with annotated annotation."""
 
     id: Annotated[int, _PrimaryKeyAnnotation]
     name: str
 
 
-class UserWithType(BaseModel, Generic[GenericType]):
+class UserWithType(SuperModel, Generic[GenericType]):
     """User test model with type."""
 
     id: GenericType

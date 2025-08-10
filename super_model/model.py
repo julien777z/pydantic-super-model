@@ -2,8 +2,10 @@ from typing import Any, Optional, get_origin, get_args, get_type_hints, Annotate
 from pydantic import BaseModel as PydanticBaseModel
 from generics import get_filled_type
 
+__all__ = ["SuperModel"]
 
-class BaseModel(PydanticBaseModel):
+
+class SuperModel(PydanticBaseModel):
     """Pydantic BaseModel with extra methods."""
 
     _generic_type_value: Any = None
@@ -15,7 +17,7 @@ class BaseModel(PydanticBaseModel):
             return self._generic_type_value
 
         try:
-            self._generic_type_value = get_filled_type(self, BaseModel, 0)
+            self._generic_type_value = get_filled_type(self, SuperModel, 0)
         except TypeError:
             return None
 
