@@ -1,6 +1,6 @@
 # Super Model for Pydantic
 
-[![codecov](https://codecov.io/gh/julien777z/pydantic-super-model/branch/main/graph/badge.svg)](https://codecov.io/gh/julien777z/pydantic-super-model)
+[![Coverage](https://img.shields.io/codecov/c/github/julien777z/pydantic-super-model?branch=main&label=Coverage)](https://codecov.io/gh/julien777z/pydantic-super-model)
 
 A lightweight extension of Pydantic's `BaseModel` that adds generic type introspection and retrieval of fields annotated with `typing.Annotated`.
 
