@@ -15,19 +15,13 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Setup Python and Poetry
+        uses: ./.github/actions/setup-python-poetry
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Install Poetry
-        run: pipx install poetry==2.1.2
-
-      - name: Install Dependencies
-        run: |
-          poetry install -E dev
+          poetry_install_command: "poetry install -E dev"
 
       - name: Test with Pytest
         run: |
