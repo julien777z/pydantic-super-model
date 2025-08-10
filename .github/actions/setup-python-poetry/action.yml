@@ -10,7 +10,7 @@ inputs:
     description: Poetry version to install (use 'latest' for newest)
     required: false
     default: "2.1.4"
-  poetry_install_command:
+  post_setup_command:
     description: Command to run after setup (e.g. 'poetry install -E dev')
     required: false
     default: ""
@@ -42,9 +42,9 @@ runs:
     - name: Run specified command
       shell: bash
       run: |
-        if [ -n "${{ inputs.poetry_install_command }}" ]; then
-          echo "> Running post-setup command: ${{ inputs.poetry_install_command }}"
-          eval "${{ inputs.poetry_install_command }}"
+        if [ -n "${{ inputs.post_setup_command }}" ]; then
+          echo "> Running post-setup command: ${{ inputs.post_setup_command }}"
+          eval "${{ inputs.post_setup_command }}"
         else
           echo "> No post-setup command provided. Skipping."
         fi

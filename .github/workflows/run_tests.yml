@@ -21,7 +21,7 @@ jobs:
         uses: ./.github/actions/setup-python-poetry
         with:
           python-version: ${{ matrix.python-version }}
-          poetry_install_command: "poetry install -E dev"
+          post_setup_command: "poetry install -E dev"
 
       - name: Test with Pytest
         run: |

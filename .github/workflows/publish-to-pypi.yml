@@ -31,7 +31,7 @@ jobs:
       - name: Setup Python and Poetry
         uses: ./.github/actions/setup-python-poetry
         with:
-          poetry_install_command: "poetry install --no-interaction --no-root"
+          post_setup_command: "poetry install --no-interaction --no-root"
 
       - name: Bump version
         id: bump
