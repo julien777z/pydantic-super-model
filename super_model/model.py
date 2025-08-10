@@ -59,13 +59,3 @@ class SuperModel(PydanticBaseModel):
                     result[field_name] = value
 
         return result
-
-    @classmethod
-    def _get_class_parameter(cls, parameter_name: str) -> Any:
-        """Get a class parameter from the class or its parent classes."""
-
-        for base in cls.__mro__[1:]:
-            if hasattr(base, parameter_name):
-                return getattr(base, parameter_name)
-
-        return None
