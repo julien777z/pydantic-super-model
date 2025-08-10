@@ -1,5 +1,7 @@
 # Super Model for Pydantic
 
+[![codecov](https://codecov.io/gh/julien777z/pydantic-super-model/branch/main/graph/badge.svg)](https://codecov.io/gh/julien777z/pydantic-super-model)
+
 I created this package because I needed a centralized place
 for a Pydantic BaseModel that can 1) return the generic type of the BaseModel
 and 2) return which field(s) have a certain Annotation.
