@@ -4,6 +4,18 @@ I created this package because I needed a centralized place
 for a Pydantic BaseModel that can 1) return the generic type of the BaseModel
 and 2) return which field(s) have a certain Annotation.
 
+## Installation
+
+Install with [pip](https://pip.pypa.io/en/stable/)
+```bash
+pip install super_model
+```
+
+## Features
+
+- Generic support
+- Able to retrieve field(s) with a specific Annotation
+
 ## Generic Example
 
 ```python
