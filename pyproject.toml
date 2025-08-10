@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-super-model"
-version = "0.0.2"
+version = "0.0.3"
 description = "Pydantic BaseModel supercharged with helper methods for generic and annotation support"
 authors = [
     {name = "Julien Kmec",email = "me@julien.dev"}
