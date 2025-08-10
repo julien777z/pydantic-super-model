@@ -20,9 +20,9 @@ pip install pydantic-super-model
 
 ```python
 
-from super_model import BaseModel
+from super_model import SuperModel
 
-class UserWithType[T](BaseModel):
+class UserWithType[T](SuperModel):
     """User model with a generic type."""
 
     id: T
@@ -38,7 +38,7 @@ user_type = user.get_type() # int
 ```python
 
 from typing import Annotated
-from super_model import BaseModel
+from super_model import SuperModel
 
 
 class _PrimaryKeyAnnotation:
@@ -46,7 +46,7 @@ class _PrimaryKeyAnnotation:
 
 PrimaryKey = Annotated[int, _PrimaryKeyAnnotation]
 
-class UserWithAnnotation(BaseModel):
+class UserWithAnnotation(SuperModel):
     """User model with an Annotation for a field."""
 
     id: PrimaryKey

@@ -1,3 +1,1 @@
-from .model import BaseModel
-
-__all__ = ["BaseModel"]
+from .model import *
