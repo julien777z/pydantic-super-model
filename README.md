@@ -8,7 +8,7 @@ and 2) return which field(s) have a certain Annotation.
 
 Install with [pip](https://pip.pypa.io/en/stable/)
 ```bash
-pip install super_model
+pip install pydantic-super-model
 ```
 
 ## Features
@@ -57,3 +57,8 @@ user = UserWithAnnotation(id=1, name="John Doe")
 annotations = user.get_annotated_fields(PrimaryKey)
 # {"id": 1}
 ```
+
+## Run Tests
+
+* Install with the `dev` extra: `pip install pydantic-super-model[dev]`
+* Run tests with `python -m pytest .` or `poetry run pytest .` if using [Poetry](https://python-poetry.org/).
