@@ -1,8 +1,8 @@
 # Super Model for Pydantic
 
-I created this package because I needed a centralized place
-for a Pydantic BaseModel that can 1) return the generic type of the BaseModel
-and 2) return which field(s) have a certain Annotation.
+[![Coverage](https://img.shields.io/codecov/c/github/julien777z/pydantic-super-model?branch=main&label=Coverage)](https://codecov.io/gh/julien777z/pydantic-super-model)
+
+A lightweight extension of Pydantic's `BaseModel` that adds generic type introspection and retrieval of fields annotated with `typing.Annotated`.
 
 ## Installation
 

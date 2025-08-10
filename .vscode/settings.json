@@ -9,5 +9,8 @@
     },
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "ms-python.black-formatter",
-    "python.languageServer": "None"
+    "python.languageServer": "None",
+    "pylint.args": [
+      "--disable=missing-module-docstring"
+    ]
   }
