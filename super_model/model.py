@@ -85,7 +85,9 @@ class SuperModel(PydanticBaseModel):
             if _has_requested_annotation(field_type):
                 value = getattr(self, field_name, None)
 
-                if value is not None:
+                # Include fields explicitly set (even if value is None),
+                # or any non-None values.
+                if field_name in self.model_fields_set or value is not None:
                     result[field_name] = value
 
         return result

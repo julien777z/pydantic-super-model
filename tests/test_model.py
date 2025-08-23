@@ -57,7 +57,7 @@ class TestModelAnnotations:
         assert not user.get_annotated_fields()
 
     def test_none_value_is_skipped(self):
-        """Skip fields with None value even if annotated."""
+        """Include fields set to None when explicitly provided."""
 
         class _UserOptionalPk(SuperModel):
             """User with optional annotated id."""
@@ -67,7 +67,7 @@ class TestModelAnnotations:
 
         user = _UserOptionalPk(id=None, name="John Doe")
 
-        assert not user.get_annotated_fields(PrimaryKey)
+        assert user.get_annotated_fields(PrimaryKey) == {"id": None}
 
     def test_falsy_value_is_included(self):
         """Include falsy values other than None (e.g., 0)."""
@@ -132,6 +132,23 @@ class TestModelAnnotations:
         user = User(id=1, name="John Doe")
 
         assert not user.get_annotated_fields(_NoSuchAnnotation)
+
+    def test_unset_none_is_omitted_but_explicit_none_is_included(self):
+        """Omit unset default None, include explicit None in annotated fields."""
+
+        class _UserWithOptionalPk(SuperModel):
+            """User model with optional annotated id defaulting to None."""
+
+            id: PrimaryKey | None = None
+            name: str
+
+        # Unset None: id omitted
+        user_unset = _UserWithOptionalPk(name="A")
+        assert not user_unset.get_annotated_fields(PrimaryKey)
+
+        # Explicit None: id included with None value
+        user_explicit = _UserWithOptionalPk(id=None, name="B")
+        assert user_explicit.get_annotated_fields(PrimaryKey) == {"id": None}
 
 
 class TestModelType:
