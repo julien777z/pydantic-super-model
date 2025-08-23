@@ -1,6 +1,6 @@
 from typing import Annotated
-
-from super_model import SuperModel
+import pytest
+from super_model import SuperModel, FieldNotImplemented
 from tests.models.user import (
     User,
     PrimaryKey,
@@ -57,17 +57,17 @@ class TestModelAnnotations:
         assert not user.get_annotated_fields()
 
     def test_none_value_is_skipped(self):
-        """Skip fields with None value even if annotated."""
+        """Include fields set to None when explicitly provided."""
 
-        class UserOptionalPk(SuperModel):
+        class _UserOptionalPk(SuperModel):
             """User with optional annotated id."""
 
             id: PrimaryKey | None
             name: str
 
-        user = UserOptionalPk(id=None, name="John Doe")
+        user = _UserOptionalPk(id=None, name="John Doe")
 
-        assert not user.get_annotated_fields(PrimaryKey)
+        assert user.get_annotated_fields(PrimaryKey) == {"id": None}
 
     def test_falsy_value_is_included(self):
         """Include falsy values other than None (e.g., 0)."""
@@ -93,13 +93,13 @@ class TestModelAnnotations:
 
         Other = Annotated[int, _OtherAnnotation]
 
-        class ModelWithTwo(SuperModel):
+        class _ModelWithTwo(SuperModel):
             """Model with two differently annotated fields."""
 
             a: PrimaryKey
             b: Other
 
-        m = ModelWithTwo(a=1, b=2)
+        m = _ModelWithTwo(a=1, b=2)
 
         # Single meta annotation
         assert m.get_annotated_fields(_OtherAnnotation) == {"b": 2}
@@ -111,14 +111,14 @@ class TestModelAnnotations:
     def test_nested_union_and_annotated(self):
         """Handle nested Union and Annotated combinations."""
 
-        class ModelNested(SuperModel):
+        class _ModelNested(SuperModel):
             """Model with nested union types."""
 
             id: (Annotated[int, _PrimaryKeyAnnotation] | str) | float
             name: str
 
-        m1 = ModelNested(id=123, name="A")
-        m2 = ModelNested(id="x", name="B")
+        m1 = _ModelNested(id=123, name="A")
+        m2 = _ModelNested(id="x", name="B")
 
         assert m1.get_annotated_fields(_PrimaryKeyAnnotation) == {"id": 123}
         assert m2.get_annotated_fields(_PrimaryKeyAnnotation) == {"id": "x"}
@@ -132,6 +132,23 @@ class TestModelAnnotations:
         user = User(id=1, name="John Doe")
 
         assert not user.get_annotated_fields(_NoSuchAnnotation)
+
+    def test_unset_none_is_omitted_but_explicit_none_is_included(self):
+        """Omit unset default None, include explicit None in annotated fields."""
+
+        class _UserWithOptionalPk(SuperModel):
+            """User model with optional annotated id defaulting to None."""
+
+            id: PrimaryKey | None = None
+            name: str
+
+        # Unset None: id omitted
+        user_unset = _UserWithOptionalPk(name="A")
+        assert not user_unset.get_annotated_fields(PrimaryKey)
+
+        # Explicit None: id included with None value
+        user_explicit = _UserWithOptionalPk(id=None, name="B")
+        assert user_explicit.get_annotated_fields(PrimaryKey) == {"id": None}
 
 
 class TestModelType:
@@ -159,3 +176,44 @@ class TestModelType:
         assert first is int
         assert second is int
         assert user_with_type._generic_type_value is int  # pylint: disable=protected-access
+
+
+class TestValidateNotImplementedFields:
+    """Test validation of fields annotated as not implemented."""
+
+    def test_raises_when_annotated_field_is_present(self):
+        """Raise NotImplementedError when an annotated field has a value."""
+
+        class _ModelWithNotImplemented(SuperModel):
+            """Model with a not-implemented field."""
+
+            test_field: Annotated[int, FieldNotImplemented]
+            name: str
+
+        with pytest.raises(NotImplementedError):
+            _ModelWithNotImplemented(test_field=1, name="x")
+
+    def test_does_not_raise_when_annotated_field_is_none(self):
+        """Do not raise when annotated field is None (skipped)."""
+
+        class _ModelWithOptionalNotImplemented(SuperModel):
+            """Model with optional not-implemented field defaulting to None."""
+
+            test_field: Annotated[int | None, FieldNotImplemented] = None
+            name: str
+
+        test_model = _ModelWithOptionalNotImplemented(name="x")
+
+        assert test_model.name == "x"
+
+    def test_raises_on_falsy_non_none_value(self):
+        """Raise when annotated field is falsy but not None (e.g., 0)."""
+
+        class _ModelWithZero(SuperModel):
+            """Model with not-implemented field set to zero."""
+
+            test_field: Annotated[int, FieldNotImplemented]
+            name: str
+
+        with pytest.raises(NotImplementedError):
+            _ModelWithZero(test_field=0, name="z")
