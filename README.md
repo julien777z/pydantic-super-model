@@ -60,7 +60,7 @@ annotations = user.get_annotated_fields(PrimaryKey)
 
 ## Documentation
 
-### Annotations
+### Get Annotated Fields
 
 `SuperModel.get_annotated_fields(*annotations)` returns a dict of field names to values for fields whose type hints carry any of the provided annotations (either the `Annotated[...]` alias or the meta annotation type).
 
@@ -98,7 +98,9 @@ assert not UserOptional(name="A").get_annotated_fields(PrimaryKey)
 assert UserOptional(id=None, name="B").get_annotated_fields(PrimaryKey) == {"id": None}
 ```
 
-FieldNotImplemented:
+### FieldNotImplemented Annotation
+
+You can use the `FieldNotImplemented` annotation to mark fields that should not be set:
 
 ```python
 from typing import Annotated
