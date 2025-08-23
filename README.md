@@ -58,6 +58,83 @@ annotations = user.get_annotated_fields(PrimaryKey)
 # {"id": 1}
 ```
 
+## Documentation
+
+### Annotations
+
+`SuperModel.get_annotated_fields(*annotations)` returns a dict of field names to values for fields whose type hints carry any of the provided annotations (either the `Annotated[...]` alias or the meta annotation type).
+
+It includes falsy values (like `0` or an empty string) and includes `None` only when the field was explicitly provided. Unset default `None` values are omitted.
+
+```python
+from typing import Annotated
+from super_model import SuperModel
+
+class _PrimaryKey:
+    pass
+
+PrimaryKey = Annotated[int, _PrimaryKey]
+
+class User(SuperModel):
+    id: PrimaryKey
+    name: str
+
+u = User(id=1, name="Jane")
+
+assert u.get_annotated_fields(PrimaryKey) == {"id": 1}
+```
+
+Explicit None vs. unset default:
+
+```python
+class UserOptional(SuperModel):
+    id: PrimaryKey | None = None
+    name: str
+
+# Unset default None is omitted
+assert not UserOptional(name="A").get_annotated_fields(PrimaryKey)
+
+# Explicit None is included
+assert UserOptional(id=None, name="B").get_annotated_fields(PrimaryKey) == {"id": None}
+```
+
+FieldNotImplemented:
+
+```python
+from typing import Annotated
+from super_model import SuperModel, FieldNotImplemented
+
+class Experimental(SuperModel):
+    test_field: Annotated[int, FieldNotImplemented]
+    name: str
+
+# Raises NotImplementedError because the field is provided
+Experimental(test_field=1, name="x")
+
+# Optional + unset default is allowed
+class ExperimentalOptional(SuperModel):
+    test_field: Annotated[int | None, FieldNotImplemented] = None
+    name: str
+
+ExperimentalOptional(name="ok")  # ok (field is unset)
+```
+
+### Generics
+
+Use `get_type()` to retrieve the concrete generic type parameter supplied at instantiation time.
+
+```python
+from super_model import SuperModel
+
+class UserWithType[T](SuperModel):
+    id: T
+    name: str
+
+u = UserWithType[int](id=1, name="Charlie")
+
+assert u.get_type() is int
+```
+
 ## Run Tests
 
 * Install with the `dev` extra: `pip install pydantic-super-model[dev]`
