@@ -100,7 +100,8 @@ assert UserOptional(id=None, name="B").get_annotated_fields(PrimaryKey) == {"id"
 
 ### FieldNotImplemented Annotation
 
-You can use the `FieldNotImplemented` annotation to mark fields that should not be set:
+You can use the `FieldNotImplemented` annotation to mark fields that should not be set. An example
+use case are experimental fields that you intend on implementing later.
 
 ```python
 from typing import Annotated
