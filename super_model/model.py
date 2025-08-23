@@ -1,15 +1,40 @@
 from types import UnionType
 from typing import Any, Annotated, Union, get_args, get_origin, get_type_hints
-from pydantic import BaseModel as PydanticBaseModel
+from typing_extensions import Self
+from pydantic import BaseModel as PydanticBaseModel, model_validator
 from generics import get_filled_type
 
-__all__ = ["SuperModel"]
+__all__ = ["SuperModel", "FieldNotImplemented"]
+
+
+class _FieldNotImplemented:  # pylint: disable=too-few-public-methods
+    """
+    Annotation for fields that are not implemented.
+    If a field is annotated with this and it is presented in the model,
+    this library will raise a NotImplementedError.
+    """
+
+
+FieldNotImplemented = _FieldNotImplemented()
 
 
 class SuperModel(PydanticBaseModel):
     """Pydantic BaseModel with extra methods."""
 
     _generic_type_value: Any = None
+
+    @model_validator(mode="after")
+    def validate_not_implemented_fields(self) -> Self:
+        """Validate that all fields are implemented."""
+
+        not_implemented_fields = self.get_annotated_fields(FieldNotImplemented)
+
+        if not_implemented_fields:
+            raise NotImplementedError(
+                f"Fields {not_implemented_fields} are not implemented and should be removed."
+            )
+
+        return self
 
     def get_type(self) -> type | None:
         """Get the type of the model."""
