@@ -645,5 +645,5 @@ dev = ["black", "coverage", "isort", "pylint", "pytest", "pytest-asyncio", "pyte
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.11.0,<4.0.0"
-content-hash = "a5cf25a978ee1d71e0e87e8d3adc56e61ce2871cd9e0246c770e961ab7fff0e2"
+python-versions = ">=3.11.0,<3.14"
+content-hash = "968fcba4f48dc67b6419ca177e4e447d179c2b03d5624495df97110c47d5f43f"
