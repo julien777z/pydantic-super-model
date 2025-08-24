@@ -1,4 +1,5 @@
 from typing import Annotated, Generic, TypeVar
+
 from super_model import SuperModel
 
 

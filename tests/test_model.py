@@ -1,13 +1,15 @@
 from typing import Annotated
+
 import pytest
-from super_model import SuperModel, FieldNotImplemented
+
+from super_model import FieldNotImplemented, SuperModel
 from tests.models.user import (
-    User,
     PrimaryKey,
+    User,
     UserNoAnnotations,
-    UserWithUnionAnnotation,
     UserWithAnnotatedAnnotation,
     UserWithType,
+    UserWithUnionAnnotation,
     _PrimaryKeyAnnotation,
 )
 
