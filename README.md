@@ -20,7 +20,7 @@ pip install pydantic-super-model
 
 ```python
 
-from super_model import SuperModel
+from pydantic_super_model import SuperModel
 
 class UserWithType[T](SuperModel):
     """User model with a generic type."""
@@ -38,7 +38,7 @@ user_type = user.get_type() # int
 ```python
 
 from typing import Annotated
-from super_model import SuperModel
+from pydantic_super_model import SuperModel
 
 
 class _PrimaryKeyAnnotation:
@@ -68,7 +68,7 @@ It includes falsy values (like `0` or an empty string) and includes `None` only 
 
 ```python
 from typing import Annotated
-from super_model import SuperModel
+from pydantic_super_model import SuperModel
 
 class _PrimaryKey:
     pass
@@ -105,7 +105,7 @@ use case are experimental fields that you intend on implementing later.
 
 ```python
 from typing import Annotated
-from super_model import SuperModel, FieldNotImplemented
+from pydantic_super_model import SuperModel, FieldNotImplemented
 
 class Experimental(SuperModel):
     test_field: Annotated[int, FieldNotImplemented]
@@ -127,7 +127,7 @@ ExperimentalOptional(name="ok")  # ok (field is unset)
 Use `get_type()` to retrieve the concrete generic type parameter supplied at instantiation time.
 
 ```python
-from super_model import SuperModel
+from pydantic_super_model import SuperModel
 
 class UserWithType[T](SuperModel):
     id: T

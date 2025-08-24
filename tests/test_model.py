@@ -2,7 +2,7 @@ from typing import Annotated
 
 import pytest
 
-from super_model import FieldNotImplemented, SuperModel
+from pydantic_super_model import FieldNotImplemented, SuperModel
 from tests.models.user import (
     PrimaryKey,
     User,

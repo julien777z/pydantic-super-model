@@ -25,9 +25,13 @@ dev = [
     "pylint",
 ]
 
+[project.scripts]
+tests = "scripts.run_tests:main"
+
 [tool.poetry]
 packages = [
-    {include = "super_model"}
+    {include = "pydantic_super_model"},
+    {include = "scripts"}
 ]
 
 [tool.pytest.ini_options]
