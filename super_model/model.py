@@ -1,8 +1,9 @@
 from types import UnionType
-from typing import Any, Annotated, Union, get_args, get_origin, get_type_hints
-from typing_extensions import Self
-from pydantic import BaseModel as PydanticBaseModel, model_validator
+from typing import Annotated, Any, Self, Union, get_args, get_origin, get_type_hints
+
 from generics import get_filled_type
+from pydantic import BaseModel as PydanticBaseModel
+from pydantic import model_validator
 
 __all__ = ["SuperModel", "FieldNotImplemented"]
 
