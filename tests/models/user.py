@@ -1,6 +1,6 @@
 from typing import Annotated, Generic, TypeVar
 
-from super_model import SuperModel
+from pydantic_super_model import SuperModel
 
 
 class _PrimaryKeyAnnotation:

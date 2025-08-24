@@ -30,7 +30,7 @@ tests = "scripts.run_tests:main"
 
 [tool.poetry]
 packages = [
-    {include = "pydantic_super_model"},
+    {include = "pydantic_pydantic_super_model"},
     {include = "scripts"}
 ]
 
