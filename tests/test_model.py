@@ -219,3 +219,56 @@ class TestValidateNotImplementedFields:
 
         with pytest.raises(NotImplementedError):
             _ModelWithZero(test_field=0, name="z")
+
+
+class TestGetAnnotatedFieldValue:
+    """Test the model's get_annotated_field_value method."""
+
+    def test_returns_value_for_annotated_field(self):
+        """Return the value of the annotated field when present."""
+
+        user = User(id=7, name="Jane")
+
+        assert user.get_annotated_field_value(PrimaryKey) == 7
+
+    def test_raises_when_no_field_found(self):
+        """Raise when no field is annotated with the requested annotation."""
+
+        user = UserNoAnnotations(id=1, name="X")
+
+        with pytest.raises(ValueError):
+            user.get_annotated_field_value(PrimaryKey)
+
+    def test_raises_when_value_is_none_and_not_allowed(self):
+        """Raise when annotated field value is None and allow_none is False."""
+
+        class _ModelOptionalPk(SuperModel):
+            """Model with optional annotated id."""
+
+            id: PrimaryKey | None
+            name: str
+
+        m = _ModelOptionalPk(id=None, name="N")
+
+        with pytest.raises(ValueError):
+            m.get_annotated_field_value(PrimaryKey)
+
+    def test_returns_none_when_allowed(self):
+        """Return None when allow_none is True and the value is None."""
+
+        class _ModelOptionalPk(SuperModel):
+            """Model with optional annotated id."""
+
+            id: PrimaryKey | None
+            name: str
+
+        m = _ModelOptionalPk(id=None, name="N")
+
+        assert m.get_annotated_field_value(PrimaryKey, allow_none=True) is None
+
+    def test_returns_falsy_zero_value(self):
+        """Return falsy values other than None (e.g., 0)."""
+
+        user = User(id=0, name="Zero")
+
+        assert user.get_annotated_field_value(PrimaryKey) == 0
