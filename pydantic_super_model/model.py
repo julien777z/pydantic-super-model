@@ -101,9 +101,9 @@ class SuperModel(PydanticBaseModel):
         if not annotated_fields:
             raise ValueError(f"No field annotated with {annotation} found.")
 
-        annotated_field_value = next(iter(annotated_fields.values()))
+        field_name, annotated_field_value = next(iter(annotated_fields.items()))
 
         if not allow_none and annotated_field_value is None:
-            raise ValueError(f"Field {annotation} is not set.")
+            raise ValueError(f"Field '{field_name}' is None; pass allow_none=True to accept None.")
 
         return annotated_field_value
