@@ -92,3 +92,18 @@ class SuperModel(PydanticBaseModel):
                     result[field_name] = value
 
         return result
+
+    def get_annotated_field_value(self, annotation: type, allow_none: bool = False) -> Any:
+        """Return the value of the first field annotated with the given annotation."""
+
+        annotated_fields = self.get_annotated_fields(annotation)
+
+        if not annotated_fields:
+            raise ValueError(f"No field annotated with {annotation} found.")
+
+        annotated_field_value = next(iter(annotated_fields.values()))
+
+        if not allow_none and annotated_field_value is None:
+            raise ValueError(f"Field {annotation} is not set.")
+
+        return annotated_field_value
