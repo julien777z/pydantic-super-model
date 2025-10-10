@@ -7,7 +7,7 @@ authors = [
 ]
 license = {text = "MIT"}
 readme = "README.md"
-requires-python = ">=3.11.0,<3.14"
+requires-python = ">=3.11,<3.15"
 homepage = "https://github.com/julien777z/pydantic-super-model"
 dependencies = [
     "pydantic (>=2.11.7,<3.0.0)",
