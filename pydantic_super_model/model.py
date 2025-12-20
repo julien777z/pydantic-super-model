@@ -57,9 +57,16 @@ class SuperModel(PydanticBaseModel):
             return {}
 
         def matches_requested_annotation(candidate: object) -> bool:
-            """Return True if candidate equals or is any requested annotation."""
+            """Return True if candidate equals, is, or is an instance of any requested annotation."""
 
-            return any(candidate is ann or candidate == ann for ann in annotations)
+            for ann in annotations:
+                if candidate is ann or candidate == ann:
+                    return True
+
+                if isinstance(ann, type) and isinstance(candidate, ann):
+                    return True
+
+            return False
 
         def _has_requested_annotation(tp: object) -> bool:
             """Return True if tp (directly or via wrappers) carries a requested annotation."""
