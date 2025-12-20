@@ -152,6 +152,22 @@ class TestModelAnnotations:
         user_explicit = _UserWithOptionalPk(id=None, name="B")
         assert user_explicit.get_annotated_fields(PrimaryKey) == {"id": None}
 
+    def test_match_by_class_when_metadata_is_instance(self):
+        """Match when searching by class but the metadata is an instance of that class."""
+
+        class _InstanceAnnotation:
+            """Annotation class used as an instance in metadata."""
+
+        class _ModelWithInstance(SuperModel):
+            """Model with annotation metadata as an instance."""
+
+            id: Annotated[int, _InstanceAnnotation()]
+            name: str
+
+        m = _ModelWithInstance(id=1, name="Test")
+
+        assert m.get_annotated_fields(_InstanceAnnotation) == {"id": 1}
+
 
 class TestModelType:
     """Test the model's get_type method."""
