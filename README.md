@@ -2,7 +2,7 @@
 
 [![Coverage](https://img.shields.io/codecov/c/github/julien777z/pydantic-super-model?branch=main&label=Coverage)](https://codecov.io/gh/julien777z/pydantic-super-model)
 
-A lightweight extension of Pydantic's `BaseModel` that adds generic type introspection and retrieval of fields annotated with `typing.Annotated`.
+A lightweight extension of Pydantic's `BaseModel` that adds generic type introspection and retrieval of fields annotated with `typing.Annotated`, including their metadata.
 
 ## Installation
 
@@ -14,7 +14,7 @@ pip install pydantic-super-model
 ## Features
 
 - Generic support
-- Able to retrieve field(s) with a specific Annotation
+- Able to retrieve field(s) with a specific annotation and metadata
 
 ## Generic Example
 
@@ -55,14 +55,17 @@ class UserWithAnnotation(SuperModel):
 user = UserWithAnnotation(id=1, name="John Doe")
 
 annotations = user.get_annotated_fields(PrimaryKey)
-# {"id": 1}
+
+field_info = annotations["id"]
+assert field_info.value == 1
+assert field_info.metadata == (_PrimaryKeyAnnotation,)
 ```
 
 ## Documentation
 
 ### Get Annotated Fields
 
-`SuperModel.get_annotated_fields(*annotations)` returns a dict of field names to values for fields whose type hints carry any of the provided annotations (either the `Annotated[...]` alias or the meta annotation type).
+`SuperModel.get_annotated_fields(*annotations)` returns a dict of field names to `AnnotatedFieldInfo` objects for fields whose type hints carry any of the provided annotations (either the `Annotated[...]` alias or the meta annotation type).
 
 It includes falsy values (like `0` or an empty string) and includes `None` only when the field was explicitly provided. Unset default `None` values are omitted.
 
@@ -81,7 +84,11 @@ class User(SuperModel):
 
 u = User(id=1, name="Jane")
 
-assert u.get_annotated_fields(PrimaryKey) == {"id": 1}
+field_info = u.get_annotated_fields(PrimaryKey)["id"]
+
+assert field_info.value == 1
+assert field_info.annotation == PrimaryKey
+assert field_info.metadata == (_PrimaryKey,)
 ```
 
 Explicit None vs. unset default:
@@ -95,7 +102,53 @@ class UserOptional(SuperModel):
 assert not UserOptional(name="A").get_annotated_fields(PrimaryKey)
 
 # Explicit None is included
-assert UserOptional(id=None, name="B").get_annotated_fields(PrimaryKey) == {"id": None}
+field_info = UserOptional(id=None, name="B").get_annotated_fields(PrimaryKey)["id"]
+
+assert field_info.value is None
+assert field_info.metadata == (_PrimaryKey,)
+```
+
+Metadata-instance matching:
+
+```python
+from typing import Annotated
+
+from pydantic_super_model import SuperModel
+
+
+class ThemeColorOptions:
+    def __init__(self, *, palette: str, allow_gradients: bool) -> None:
+        self.palette = palette
+        self.allow_gradients = allow_gradients
+
+
+ThemeColorField = Annotated[
+    str,
+    "theme_color",
+    ThemeColorOptions(palette="northern-lights", allow_gradients=True),
+]
+
+
+class ThemeConfig(SuperModel):
+    accent_color: ThemeColorField
+
+
+theme = ThemeConfig(accent_color="#7dd3fc")
+field_info = theme.get_annotated_fields(ThemeColorOptions)["accent_color"]
+
+assert isinstance(field_info.matched_metadata[0], ThemeColorOptions)
+assert field_info.matched_metadata[0].palette == "northern-lights"
+assert field_info.matched_metadata[0].allow_gradients is True
+```
+
+Use `get_annotated_field_value(...)` when you want the first matching `AnnotatedFieldInfo` directly.
+
+```python
+field_info = theme.get_annotated_field_value(ThemeColorOptions)
+
+assert field_info is not None
+assert field_info.value == "#7dd3fc"
+assert field_info.matched_metadata[0].palette == "northern-lights"
 ```
 
 ### FieldNotImplemented Annotation
