@@ -1,114 +1,101 @@
-# Super Model for Pydantic
+# Pydantic Super Model
 
 [![Coverage](https://img.shields.io/codecov/c/github/julien777z/pydantic-super-model?branch=main&label=Coverage)](https://codecov.io/gh/julien777z/pydantic-super-model)
 
-A lightweight extension of Pydantic's `BaseModel` that adds generic type introspection and retrieval of fields annotated with `typing.Annotated`, including their metadata.
+`pydantic-super-model` is a small extension around Pydantic's `BaseModel` that adds:
+
+- generic type introspection via `get_type()`
+- lookup helpers for fields annotated with `typing.Annotated`
+- a `FieldNotImplemented` marker for fields that must not be set yet
+
+Import from the package root:
+
+```python
+from pydantic_super_model import AnnotatedFieldInfo, FieldNotImplemented, SuperModel
+```
+
+`pydantic_super_model.model` is no longer a supported import path.
 
 ## Installation
 
-Install with [pip](https://pip.pypa.io/en/stable/)
 ```bash
 pip install pydantic-super-model
 ```
 
-## Features
-
-- Generic support
-- Able to retrieve field(s) with a specific annotation and metadata
-
 ## Generic Example
 
 ```python
+from typing import Generic, TypeVar
 
 from pydantic_super_model import SuperModel
 
-class UserWithType[T](SuperModel):
-    """User model with a generic type."""
+GenericType = TypeVar("GenericType")
 
-    id: T
+
+class UserWithType(SuperModel, Generic[GenericType]):
+    id: GenericType
     name: str
+
 
 user = UserWithType[int](id=1, name="John Doe")
 
-user_type = user.get_type() # int
+assert user.get_type() is int
 ```
 
-## Annotation Example
+## Annotated Field Example
 
 ```python
-
 from typing import Annotated
+
 from pydantic_super_model import SuperModel
 
 
 class _PrimaryKeyAnnotation:
     pass
 
+
 PrimaryKey = Annotated[int, _PrimaryKeyAnnotation]
 
-class UserWithAnnotation(SuperModel):
-    """User model with an Annotation for a field."""
-
-    id: PrimaryKey
-    name: str
-
-user = UserWithAnnotation(id=1, name="John Doe")
-
-annotations = user.get_annotated_fields(PrimaryKey)
-
-field_info = annotations["id"]
-assert field_info.value == 1
-assert field_info.metadata == (_PrimaryKeyAnnotation,)
-```
-
-## Documentation
-
-### Get Annotated Fields
-
-`SuperModel.get_annotated_fields(*annotations)` returns a dict of field names to `AnnotatedFieldInfo` objects for fields whose type hints carry any of the provided annotations (either the `Annotated[...]` alias or the meta annotation type).
-
-It includes falsy values (like `0` or an empty string) and includes `None` only when the field was explicitly provided. Unset default `None` values are omitted.
-
-```python
-from typing import Annotated
-from pydantic_super_model import SuperModel
-
-class _PrimaryKey:
-    pass
-
-PrimaryKey = Annotated[int, _PrimaryKey]
 
 class User(SuperModel):
     id: PrimaryKey
     name: str
 
-u = User(id=1, name="Jane")
 
-field_info = u.get_annotated_fields(PrimaryKey)["id"]
+user = User(id=1, name="John Doe")
+field_info = user.get_annotated_fields(PrimaryKey)["id"]
 
 assert field_info.value == 1
 assert field_info.annotation == PrimaryKey
-assert field_info.metadata == (_PrimaryKey,)
+assert field_info.metadata == (_PrimaryKeyAnnotation,)
 ```
 
-Explicit None vs. unset default:
+## API
+
+### `get_annotated_fields(*annotations)`
+
+Return a dictionary of field names to `AnnotatedFieldInfo` objects for fields whose type hints carry any requested annotation.
+
+- Match by the full `Annotated[...]` alias or by metadata type
+- Include falsy values such as `0`
+- Include `None` only when the field was explicitly provided
+- Omit unset default `None` values
 
 ```python
 class UserOptional(SuperModel):
     id: PrimaryKey | None = None
     name: str
 
-# Unset default None is omitted
+
 assert not UserOptional(name="A").get_annotated_fields(PrimaryKey)
 
-# Explicit None is included
 field_info = UserOptional(id=None, name="B").get_annotated_fields(PrimaryKey)["id"]
 
 assert field_info.value is None
-assert field_info.metadata == (_PrimaryKey,)
+assert field_info.metadata == (_PrimaryKeyAnnotation,)
 ```
 
-Metadata-instance matching:
+Metadata instance matching also works:
 
 ```python
 from typing import Annotated
@@ -141,57 +128,71 @@ assert field_info.matched_metadata[0].palette == "northern-lights"
 assert field_info.matched_metadata[0].allow_gradients is True
 ```
 
-Use `get_annotated_field_value(...)` when you want the first matching `AnnotatedFieldInfo` directly.
+### `get_annotated_field_value(annotation, allow_none=False, allow_undefined=False)`
+
+Return the first matching `AnnotatedFieldInfo`.
 
 ```python
 field_info = theme.get_annotated_field_value(ThemeColorOptions)
 
 assert field_info is not None
 assert field_info.value == "#7dd3fc"
-assert field_info.matched_metadata[0].palette == "northern-lights"
 ```
 
-### FieldNotImplemented Annotation
+If no matching field exists:
 
-You can use the `FieldNotImplemented` annotation to mark fields that should not be set. An example
-use case are experimental fields that you intend on implementing later.
+- raise `ValueError` by default
+- return `None` when `allow_undefined=True`
+
+If the matching field value is `None`:
+
+- raise `ValueError` by default
+- return the field info when `allow_none=True`
+
+### `FieldNotImplemented`
+
+Use `FieldNotImplemented` to mark fields that must not be set yet.
 
 ```python
 from typing import Annotated
-from pydantic_super_model import SuperModel, FieldNotImplemented
+
+from pydantic_super_model import FieldNotImplemented, SuperModel
+
 
 class Experimental(SuperModel):
     test_field: Annotated[int, FieldNotImplemented]
     name: str
 
-# Raises NotImplementedError because the field is provided
-Experimental(test_field=1, name="x")
 
-# Optional + unset default is allowed
+Experimental(test_field=1, name="x")  # raises NotImplementedError
+
+
 class ExperimentalOptional(SuperModel):
     test_field: Annotated[int | None, FieldNotImplemented] = None
     name: str
 
-ExperimentalOptional(name="ok")  # ok (field is unset)
+
+ExperimentalOptional(name="ok")
 ```
 
-### Generics
+### `get_type()`
 
-Use `get_type()` to retrieve the concrete generic type parameter supplied at instantiation time.
+Return the concrete generic type parameter supplied to the model instance.
 
 ```python
-from pydantic_super_model import SuperModel
-
-class UserWithType[T](SuperModel):
-    id: T
-    name: str
-
-u = UserWithType[int](id=1, name="Charlie")
-
-assert u.get_type() is int
+assert UserWithType[int](id=1, name="Charlie").get_type() is int
 ```
 
-## Run Tests
+## Development
 
-* Install with the `dev` extra: `pip install pydantic-super-model[dev]`
-* Run tests with `pytest .`
+Install dev dependencies:
+
+```bash
+pip install "pydantic-super-model[dev]"
+```
+
+Run the test suite:
+
+```bash
+pytest
+```
