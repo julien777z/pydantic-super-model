@@ -7,7 +7,18 @@ class _PrimaryKeyAnnotation:
     pass
 
 
+class _ThemeColorOptions:
+    def __init__(self, *, palette: str, allow_gradients: bool) -> None:
+        self.palette = palette
+        self.allow_gradients = allow_gradients
+
+
 PrimaryKey = Annotated[int, _PrimaryKeyAnnotation]
+ThemeColorField = Annotated[
+    str,
+    "theme_color",
+    _ThemeColorOptions(palette="northern-lights", allow_gradients=True),
+]
 GenericType = TypeVar("GenericType", bound=int)
 
 
@@ -44,3 +55,10 @@ class UserWithType(SuperModel, Generic[GenericType]):
 
     id: GenericType
     name: str
+
+
+class ThemeConfig(SuperModel):
+    """Theme config model with instance-based metadata annotation."""
+
+    accent_color: ThemeColorField
+    theme_name: str

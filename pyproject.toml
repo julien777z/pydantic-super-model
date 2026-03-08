@@ -1,18 +1,21 @@
 [project]
 name = "pydantic-super-model"
-version = "1.1.3"
-description = "Pydantic BaseModel supercharged with helper methods for generic and annotation support"
+version = "1.2.0"
+description = "Small Pydantic BaseModel extension for generic introspection and Annotated field lookup"
 authors = [
-    {name = "Julien Kmec",email = "me@julien.dev"}
+    { name = "Julien Kmec", email = "me@julien.dev" }
 ]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
-homepage = "https://github.com/julien777z/pydantic-super-model"
 dependencies = [
     "pydantic>=2.11.7",
     "python-generics>=0.2.3"
 ]
+
+[project.urls]
+Homepage = "https://github.com/julien777z/pydantic-super-model"
+Repository = "https://github.com/julien777z/pydantic-super-model"
 
 [project.optional-dependencies]
 dev = [
@@ -25,14 +28,11 @@ dev = [
     "pylint",
 ]
 
-[project.scripts]
-tests = "scripts.run_tests:main"
-
 [tool.poetry]
 packages = [
-    {include = "pydantic_super_model"},
-    {include = "scripts"}
+    { include = "pydantic_super_model" }
 ]
+include = ["pydantic_super_model/py.typed"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
@@ -41,7 +41,7 @@ asyncio_mode = "auto"
 
 [tool.black]
 line-length = 110
-target-version = ["py312"]
+target-version = ["py311"]
 
 [tool.isort]
 profile = "black"
