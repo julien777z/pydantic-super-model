@@ -1,3 +1,5 @@
+> **NOTE:** This package does not depend on Pydantic and is pending a library rename.
+
 # Pydantic Super Model
 
 [![Coverage](https://img.shields.io/codecov/c/github/julien777z/pydantic-super-model?branch=main&label=Coverage)](https://codecov.io/gh/julien777z/pydantic-super-model)
