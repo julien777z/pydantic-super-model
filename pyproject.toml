@@ -1,7 +1,7 @@
 [project]
 name = "pydantic-super-model"
-version = "1.2.0"
-description = "Small Pydantic BaseModel extension for generic introspection and Annotated field lookup"
+version = "2.0.0"
+description = "Lightweight mixin for generic introspection and Annotated field lookup"
 authors = [
     { name = "Julien Kmec", email = "me@julien.dev" }
 ]

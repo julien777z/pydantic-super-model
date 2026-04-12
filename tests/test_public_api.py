@@ -2,7 +2,7 @@ import importlib
 
 import pytest
 
-from pydantic_super_model import AnnotatedFieldInfo, FieldNotImplemented, SuperModel
+from pydantic_super_model import AnnotatedFieldInfo, FieldNotImplemented, SuperModelPydanticMixin, SuperModelMixin
 
 
 class TestPublicApi:
@@ -13,13 +13,20 @@ class TestPublicApi:
 
         package = importlib.import_module("pydantic_super_model")
 
-        assert package.SuperModel is SuperModel
+        assert package.SuperModelMixin is SuperModelMixin
+        assert package.SuperModelPydanticMixin is SuperModelPydanticMixin
         assert package.AnnotatedFieldInfo is AnnotatedFieldInfo
         assert package.FieldNotImplemented is FieldNotImplemented
-        assert package.__all__ == ["AnnotatedFieldInfo", "FieldNotImplemented", "SuperModel"]
+        assert package.__all__ == ["AnnotatedFieldInfo", "FieldNotImplemented", "SuperModelPydanticMixin", "SuperModelMixin"]
 
     def test_legacy_model_module_is_no_longer_importable(self) -> None:
         """Raise when importing the removed legacy module path."""
 
         with pytest.raises(ModuleNotFoundError):
             importlib.import_module("pydantic_super_model.model")
+
+    def test_legacy_base_module_is_no_longer_importable(self) -> None:
+        """Raise when importing the removed base module path."""
+
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module("pydantic_super_model.base")
