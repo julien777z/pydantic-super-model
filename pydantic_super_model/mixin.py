@@ -1,5 +1,5 @@
-from pydantic_super_model._annotation_lookup import collect_annotated_fields
-from pydantic_super_model._generic_resolution import resolve_generic_type
+from pydantic_super_model.annotation_lookup import collect_annotated_fields
+from pydantic_super_model.generic_resolution import resolve_generic_type
 from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
 
 

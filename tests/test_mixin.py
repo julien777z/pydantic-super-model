@@ -62,8 +62,8 @@ class TestPlainClassAnnotatedFields:
             "id": _field_info(1, PrimaryKey, _PrimaryKeyAnnotation)
         }
 
-    def test_includes_none_values_on_plain_classes(self) -> None:
-        """Include None values since plain classes have no model_fields_set tracking."""
+    def test_includes_none_values(self) -> None:
+        """Include None values when the field defaults to None."""
 
         class _PlainOptionalPK(SuperModelMixin):
             id: PrimaryKey | None

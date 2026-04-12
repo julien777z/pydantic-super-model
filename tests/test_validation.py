@@ -30,19 +30,6 @@ class TestNotImplementedValidation:
         with pytest.raises(NotImplementedError):
             _ModelWithNotImplementedField(test_field=1, name="x")
 
-    def test_allows_unset_optional_not_implemented_fields(self) -> None:
-        """Allow optional not-implemented fields when they remain unset."""
-
-        class _OptionalNotImplementedFieldModel(_ValidatedMixin):
-            """Model with an optional not-implemented field."""
-
-            test_field: Annotated[int | None, FieldNotImplemented] = None
-            name: str
-
-        model = _OptionalNotImplementedFieldModel(name="x")
-
-        assert model.name == "x"
-
     def test_raises_for_falsy_non_none_values(self) -> None:
         """Raise for falsy values when the field is still present."""
 

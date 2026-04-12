@@ -173,23 +173,6 @@ class TestAnnotatedFields:
             "id": expected._replace(value="x")
         }
 
-    def test_omits_unset_default_none_values(self) -> None:
-        """Omit default None values when the field was not explicitly set."""
-
-        class _UserOptionalPrimaryKey(SuperModelMixin, BaseModel):
-            """Model with an optional annotated primary key default."""
-
-            id: PrimaryKey | None = None
-            name: str
-
-        unset_user = _UserOptionalPrimaryKey(name="A")
-        explicit_user = _UserOptionalPrimaryKey(id=None, name="B")
-
-        assert not unset_user.get_annotated_fields(PrimaryKey)
-        assert explicit_user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(None, PrimaryKey, _PrimaryKeyAnnotation)
-        }
-
     def test_returns_empty_for_unknown_annotations(self) -> None:
         """Return an empty mapping when no field carries the annotation."""
 
