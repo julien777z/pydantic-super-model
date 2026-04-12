@@ -1,4 +1,6 @@
-> **NOTE:** This package does not depend on Pydantic and is pending a library rename.
+<div align="center" style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px 16px;margin-bottom:16px">
+  <strong>⚠ NOTE:</strong> This package does not depend on Pydantic and is pending a library rename.
+</div>
 
 # Pydantic Super Model
 
