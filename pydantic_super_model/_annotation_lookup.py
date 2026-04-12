@@ -1,8 +1,6 @@
 from types import UnionType
 from typing import Annotated, Any, Union, get_args, get_origin, get_type_hints
 
-from pydantic import BaseModel as PydanticBaseModel
-
 from pydantic_super_model.annotations import AnnotatedFieldInfo
 
 
@@ -66,7 +64,7 @@ def _find_annotation_match(
 
 
 def collect_annotated_fields(
-    model: PydanticBaseModel,
+    model: object,
     *annotations: object,
 ) -> dict[str, AnnotatedFieldInfo]:
     """Collect fields whose type hints carry any requested annotation."""
@@ -84,7 +82,8 @@ def collect_annotated_fields(
             continue
 
         value = getattr(model, field_name, None)
-        field_is_unset_none = field_name not in model.model_fields_set and value is None
+        fields_set = getattr(model, "model_fields_set", None)
+        field_is_unset_none = value is None and fields_set is not None and field_name not in fields_set
 
         if field_is_unset_none:
             continue
