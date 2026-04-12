@@ -75,6 +75,7 @@ def collect_annotated_fields(
     type_hints = get_type_hints(type(model), include_extras=True)
     result: dict[str, AnnotatedFieldInfo] = {}
     requested_annotations = tuple(annotations)
+    fields_set = getattr(model, "model_fields_set", None)
 
     for field_name, field_type in type_hints.items():
         annotation_match = _find_annotation_match(field_type, requested_annotations)
@@ -82,7 +83,6 @@ def collect_annotated_fields(
             continue
 
         value = getattr(model, field_name, None)
-        fields_set = getattr(model, "model_fields_set", None)
         field_is_unset_none = value is None and fields_set is not None and field_name not in fields_set
 
         if field_is_unset_none:
