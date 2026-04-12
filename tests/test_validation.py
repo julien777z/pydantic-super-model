@@ -3,11 +3,11 @@ from typing import Annotated, Self
 import pytest
 from pydantic import BaseModel, model_validator
 
-from pydantic_super_model import AnnotationsMixin, FieldNotImplemented
+from pydantic_super_model import SuperModelMixin, FieldNotImplemented
 
 
-class _ValidatedMixin(AnnotationsMixin, BaseModel):
-    """Base for tests: wires AnnotationsMixin validation into Pydantic."""
+class _ValidatedMixin(SuperModelMixin, BaseModel):
+    """Base for tests: wires SuperModelMixin validation into Pydantic."""
 
     @model_validator(mode="after")
     def _validate_not_implemented_fields(self) -> Self:

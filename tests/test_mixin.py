@@ -2,7 +2,7 @@ from typing import Annotated
 
 import pytest
 
-from pydantic_super_model import AnnotationsMixin, FieldNotImplemented
+from pydantic_super_model import SuperModelMixin, FieldNotImplemented
 from tests.helpers import _field_info
 from tests.models.plain_user import (
     PlainThemeConfig,
@@ -65,7 +65,7 @@ class TestPlainClassAnnotatedFields:
     def test_includes_none_values_on_plain_classes(self) -> None:
         """Include None values since plain classes have no model_fields_set tracking."""
 
-        class _PlainOptionalPK(AnnotationsMixin):
+        class _PlainOptionalPK(SuperModelMixin):
             id: PrimaryKey | None
             name: str
 
@@ -189,7 +189,7 @@ class TestPlainClassValidation:
     def test_raises_when_not_implemented_field_is_present(self) -> None:
         """Raise when validate_not_implemented_fields is called with a set field."""
 
-        class _PlainNotImplemented(AnnotationsMixin):
+        class _PlainNotImplemented(SuperModelMixin):
             test_field: Annotated[int, FieldNotImplemented]
             name: str
 

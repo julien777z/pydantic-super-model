@@ -3,7 +3,7 @@ from typing import Annotated
 import pytest
 from pydantic import BaseModel
 
-from pydantic_super_model import AnnotationsMixin
+from pydantic_super_model import SuperModelMixin
 from tests.helpers import _field_info
 from tests.models.user import (
     PrimaryKey,
@@ -65,7 +65,7 @@ class TestAnnotatedFields:
     def test_includes_explicit_none_values(self) -> None:
         """Include annotated fields explicitly provided as None."""
 
-        class _UserOptionalPrimaryKey(AnnotationsMixin, BaseModel):
+        class _UserOptionalPrimaryKey(SuperModelMixin, BaseModel):
             """Model with an optional annotated primary key."""
 
             id: PrimaryKey | None
@@ -117,7 +117,7 @@ class TestAnnotatedFields:
 
         other_annotation = Annotated[int, _OtherAnnotation]
 
-        class _ModelWithTwoAnnotatedFields(AnnotationsMixin, BaseModel):
+        class _ModelWithTwoAnnotatedFields(SuperModelMixin, BaseModel):
             """Model with two different annotated fields."""
 
             first: PrimaryKey
@@ -152,7 +152,7 @@ class TestAnnotatedFields:
     def test_handles_nested_unions_and_annotated_types(self) -> None:
         """Return the first matching annotation found in nested unions."""
 
-        class _NestedModel(AnnotationsMixin, BaseModel):
+        class _NestedModel(SuperModelMixin, BaseModel):
             """Model with nested unions carrying annotated members."""
 
             id: (Annotated[int, _PrimaryKeyAnnotation] | str) | float
@@ -176,7 +176,7 @@ class TestAnnotatedFields:
     def test_omits_unset_default_none_values(self) -> None:
         """Omit default None values when the field was not explicitly set."""
 
-        class _UserOptionalPrimaryKey(AnnotationsMixin, BaseModel):
+        class _UserOptionalPrimaryKey(SuperModelMixin, BaseModel):
             """Model with an optional annotated primary key default."""
 
             id: PrimaryKey | None = None
@@ -268,7 +268,7 @@ class TestAnnotatedFieldValue:
     def test_raises_when_value_is_none_and_none_is_not_allowed(self) -> None:
         """Raise when the matched field value is None."""
 
-        class _OptionalPrimaryKeyModel(AnnotationsMixin, BaseModel):
+        class _OptionalPrimaryKeyModel(SuperModelMixin, BaseModel):
             """Model with an optional annotated primary key."""
 
             id: PrimaryKey | None
@@ -282,7 +282,7 @@ class TestAnnotatedFieldValue:
     def test_returns_field_info_when_none_is_allowed(self) -> None:
         """Return field info when allow_none is enabled."""
 
-        class _OptionalPrimaryKeyModel(AnnotationsMixin, BaseModel):
+        class _OptionalPrimaryKeyModel(SuperModelMixin, BaseModel):
             """Model with an optional annotated primary key."""
 
             id: PrimaryKey | None
@@ -323,7 +323,7 @@ class TestAnnotatedFieldValue:
     def test_returns_the_first_match_in_field_definition_order(self) -> None:
         """Return the first matching field based on model field order."""
 
-        class _TwoPrimaryKeys(AnnotationsMixin, BaseModel):
+        class _TwoPrimaryKeys(SuperModelMixin, BaseModel):
             """Model with two fields carrying the same annotation."""
 
             first_id: PrimaryKey

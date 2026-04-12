@@ -1,4 +1,4 @@
 from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
-from pydantic_super_model.mixin import AnnotationsMixin
+from pydantic_super_model.mixin import SuperModelMixin
 
-__all__ = ["AnnotatedFieldInfo", "AnnotationsMixin", "FieldNotImplemented"]
+__all__ = ["AnnotatedFieldInfo", "FieldNotImplemented", "SuperModelMixin"]

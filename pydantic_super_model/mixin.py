@@ -3,21 +3,11 @@ from pydantic_super_model._generic_resolution import resolve_generic_type
 from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
 
 
-class AnnotationsMixin:
-    """Mixin providing annotation introspection and generic type resolution.
-
-    Works with any Python object: Pydantic models, dataclasses, plain classes.
-    """
+class SuperModelMixin:
+    """Mixin for annotation introspection and generic type resolution."""
 
     def validate_not_implemented_fields(self) -> None:
-        """Reject fields marked as intentionally not implemented.
-
-        Call manually in ``__init__`` or ``__post_init__`` for plain classes,
-        or wire into a Pydantic ``@model_validator`` for automatic validation.
-
-        Raises ``NotImplementedError`` if any ``FieldNotImplemented``-annotated
-        fields have values.
-        """
+        """Reject fields marked as intentionally not implemented."""
 
         not_implemented_fields = self.get_annotated_fields(FieldNotImplemented)
 
@@ -31,7 +21,7 @@ class AnnotationsMixin:
     def get_type(self) -> type | None:
         """Get the concrete generic type parameter for the instance."""
 
-        return resolve_generic_type(self, AnnotationsMixin)
+        return resolve_generic_type(self, SuperModelMixin)
 
     def get_annotated_fields(self, *annotations: object) -> dict[str, AnnotatedFieldInfo]:
         """Return matched annotated fields with values and annotation metadata."""

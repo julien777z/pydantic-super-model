@@ -1,6 +1,6 @@
 from typing import Annotated, Generic, TypeVar
 
-from pydantic_super_model import AnnotationsMixin
+from pydantic_super_model import SuperModelMixin
 
 
 class _PrimaryKeyAnnotation:
@@ -22,7 +22,7 @@ ThemeColorField = Annotated[
 GenericType = TypeVar("GenericType", bound=int)
 
 
-class PlainUser(AnnotationsMixin):
+class PlainUser(SuperModelMixin):
     """Plain-class user test model."""
 
     id: PrimaryKey
@@ -33,7 +33,7 @@ class PlainUser(AnnotationsMixin):
         self.name = name
 
 
-class PlainUserNoAnnotations(AnnotationsMixin):
+class PlainUserNoAnnotations(SuperModelMixin):
     """Plain-class user test model without annotations."""
 
     id: int
@@ -44,7 +44,7 @@ class PlainUserNoAnnotations(AnnotationsMixin):
         self.name = name
 
 
-class PlainUserWithUnionAnnotation(AnnotationsMixin):
+class PlainUserWithUnionAnnotation(SuperModelMixin):
     """Plain-class user test model with union."""
 
     id: PrimaryKey | str
@@ -55,7 +55,7 @@ class PlainUserWithUnionAnnotation(AnnotationsMixin):
         self.name = name
 
 
-class PlainUserWithAnnotatedAnnotation(AnnotationsMixin):
+class PlainUserWithAnnotatedAnnotation(SuperModelMixin):
     """Plain-class user test model with annotated annotation."""
 
     id: Annotated[int, _PrimaryKeyAnnotation]
@@ -66,7 +66,7 @@ class PlainUserWithAnnotatedAnnotation(AnnotationsMixin):
         self.name = name
 
 
-class PlainUserWithType(AnnotationsMixin, Generic[GenericType]):
+class PlainUserWithType(SuperModelMixin, Generic[GenericType]):
     """Plain-class user test model with type."""
 
     id: GenericType
@@ -77,7 +77,7 @@ class PlainUserWithType(AnnotationsMixin, Generic[GenericType]):
         self.name = name
 
 
-class PlainThemeConfig(AnnotationsMixin):
+class PlainThemeConfig(SuperModelMixin):
     """Plain-class theme config model with instance-based metadata annotation."""
 
     accent_color: ThemeColorField
