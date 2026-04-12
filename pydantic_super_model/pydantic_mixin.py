@@ -6,7 +6,7 @@ from pydantic_super_model.annotations import AnnotatedFieldInfo
 from pydantic_super_model.mixin import SuperModelMixin
 
 
-class PydanticMixin(SuperModelMixin, BaseModel):
+class SuperModelPydanticMixin(SuperModelMixin, BaseModel):
     """SuperModelMixin with Pydantic auto-validation and unset-None filtering."""
 
     @model_validator(mode="after")
