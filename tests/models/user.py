@@ -1,8 +1,6 @@
 from typing import Annotated, Generic, TypeVar
 
-from pydantic import BaseModel
-
-from pydantic_super_model import SuperModelMixin
+from pydantic_super_model import PydanticMixin
 
 
 class _PrimaryKeyAnnotation:
@@ -24,42 +22,42 @@ ThemeColorField = Annotated[
 GenericType = TypeVar("GenericType", bound=int)
 
 
-class User(SuperModelMixin, BaseModel):
+class User(PydanticMixin):
     """User test model."""
 
     id: PrimaryKey
     name: str
 
 
-class UserNoAnnotations(SuperModelMixin, BaseModel):
+class UserNoAnnotations(PydanticMixin):
     """User test model without annotations."""
 
     id: int
     name: str
 
 
-class UserWithUnionAnnotation(SuperModelMixin, BaseModel):
+class UserWithUnionAnnotation(PydanticMixin):
     """User test model with union."""
 
     id: PrimaryKey | str
     name: str
 
 
-class UserWithAnnotatedAnnotation(SuperModelMixin, BaseModel):
+class UserWithAnnotatedAnnotation(PydanticMixin):
     """User test model with annotated annotation."""
 
     id: Annotated[int, _PrimaryKeyAnnotation]
     name: str
 
 
-class UserWithType(SuperModelMixin, BaseModel, Generic[GenericType]):
+class UserWithType(PydanticMixin, Generic[GenericType]):
     """User test model with type."""
 
     id: GenericType
     name: str
 
 
-class ThemeConfig(SuperModelMixin, BaseModel):
+class ThemeConfig(PydanticMixin):
     """Theme config model with instance-based metadata annotation."""
 
     accent_color: ThemeColorField
