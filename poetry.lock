@@ -4,10 +4,9 @@
 name = "annotated-types"
 version = "0.7.0"
 description = "Reusable constraint types to use with typing.Annotated"
-optional = true
+optional = false
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "extra == \"dev\""
 files = [
     {file = "annotated_types-0.7.0-py3-none-any.whl", hash = "sha256:1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53"},
     {file = "annotated_types-0.7.0.tar.gz", hash = "sha256:aff07c09a53a08bc8cfccb9c85b05f1aa9a2a6f23728d790723543408344ce89"},
@@ -358,10 +357,9 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 name = "pydantic"
 version = "2.12.0"
 description = "Data validation using Python type hints"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"dev\""
 files = [
     {file = "pydantic-2.12.0-py3-none-any.whl", hash = "sha256:f6a1da352d42790537e95e83a8bdfb91c7efbae63ffd0b86fa823899e807116f"},
     {file = "pydantic-2.12.0.tar.gz", hash = "sha256:c1a077e6270dbfb37bfd8b498b3981e2bb18f68103720e51fa6c306a5a9af563"},
@@ -381,10 +379,9 @@ timezone = ["tzdata ; python_version >= \"3.9\" and platform_system == \"Windows
 name = "pydantic-core"
 version = "2.41.1"
 description = "Core functionality for Pydantic validation and serialization"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"dev\""
 files = [
     {file = "pydantic_core-2.41.1-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:e63036298322e9aea1c8b7c0a6c1204d615dbf6ec0668ce5b83ff27f07404a61"},
     {file = "pydantic_core-2.41.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:241299ca91fc77ef64f11ed909d2d9220a01834e8e6f8de61275c4dd16b7c936"},
@@ -668,10 +665,9 @@ files = [
 name = "typing-extensions"
 version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"dev\""
 files = [
     {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
     {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
@@ -681,10 +677,9 @@ files = [
 name = "typing-inspection"
 version = "0.4.2"
 description = "Runtime typing introspection tools"
-optional = true
+optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"dev\""
 files = [
     {file = "typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7"},
     {file = "typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464"},
@@ -694,9 +689,9 @@ files = [
 typing-extensions = ">=4.12.0"
 
 [extras]
-dev = ["black", "coverage", "isort", "pydantic", "pylint", "pytest", "pytest-asyncio", "pytest-cov"]
+dev = ["black", "coverage", "isort", "pylint", "pytest", "pytest-asyncio", "pytest-cov"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.15"
-content-hash = "1f62d384e2ff0bd7cf3d1060d22049f845e61332007f4dd10863e66d50ae261f"
+content-hash = "f13525cd92014edd9dd7e76150bc51798a16bba05ea44c52752079cf00788390"
