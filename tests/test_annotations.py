@@ -36,6 +36,13 @@ class TestAnnotatedFields:
 
         assert not user.get_annotated_fields(PrimaryKey)
 
+    def test_matches_fields_typed_as_a_requested_bare_type(self) -> None:
+        """Match a field whose type hint is exactly a requested type."""
+
+        user = UserNoAnnotations(id=1, name="John Doe")
+
+        assert user.get_annotated_fields(int) == {"id": build_field_info(1, int)}
+
     def test_returns_empty_when_no_annotations_are_requested(self) -> None:
         """Return an empty mapping when no annotations are provided."""
 
