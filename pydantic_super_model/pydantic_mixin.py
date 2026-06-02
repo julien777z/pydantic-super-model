@@ -10,7 +10,9 @@ class SuperModelPydanticMixin(SuperModelMixin, BaseModel):
     """SuperModelMixin with Pydantic auto-validation and unset-None filtering."""
 
     @model_validator(mode="after")
-    def _validate_not_implemented_fields(self) -> Self:
+    def run_not_implemented_fields_validator(self) -> Self:
+        """Reject fields marked as intentionally not implemented during validation."""
+
         self.validate_not_implemented_fields()
         return self
 

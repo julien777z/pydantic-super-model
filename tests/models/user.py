@@ -3,21 +3,21 @@ from typing import Annotated, Generic, TypeVar
 from pydantic_super_model import SuperModelPydanticMixin
 
 
-class _PrimaryKeyAnnotation:
+class PrimaryKeyAnnotation:
     pass
 
 
-class _ThemeColorOptions:
+class ThemeColorOptions:
     def __init__(self, *, palette: str, allow_gradients: bool) -> None:
         self.palette = palette
         self.allow_gradients = allow_gradients
 
 
-PrimaryKey = Annotated[int, _PrimaryKeyAnnotation]
+PrimaryKey = Annotated[int, PrimaryKeyAnnotation]
 ThemeColorField = Annotated[
     str,
     "theme_color",
-    _ThemeColorOptions(palette="northern-lights", allow_gradients=True),
+    ThemeColorOptions(palette="northern-lights", allow_gradients=True),
 ]
 GenericType = TypeVar("GenericType", bound=int)
 
@@ -46,7 +46,7 @@ class UserWithUnionAnnotation(SuperModelPydanticMixin):
 class UserWithAnnotatedAnnotation(SuperModelPydanticMixin):
     """User test model with annotated annotation."""
 
-    id: Annotated[int, _PrimaryKeyAnnotation]
+    id: Annotated[int, PrimaryKeyAnnotation]
     name: str
 
 

@@ -3,7 +3,7 @@ from typing import Annotated
 import pytest
 
 from pydantic_super_model import SuperModelPydanticMixin
-from tests.helpers import _field_info
+from tests.helpers import build_field_info
 from tests.models.user import (
     PrimaryKey,
     ThemeColorField,
@@ -12,8 +12,8 @@ from tests.models.user import (
     UserNoAnnotations,
     UserWithAnnotatedAnnotation,
     UserWithUnionAnnotation,
-    _PrimaryKeyAnnotation,
-    _ThemeColorOptions,
+    PrimaryKeyAnnotation,
+    ThemeColorOptions,
 )
 
 
@@ -27,7 +27,7 @@ class TestAnnotatedFields:
 
         annotated_fields = user.get_annotated_fields(PrimaryKey)
 
-        assert annotated_fields == {"id": _field_info(1, PrimaryKey, _PrimaryKeyAnnotation)}
+        assert annotated_fields == {"id": build_field_info(1, PrimaryKey, PrimaryKeyAnnotation)}
 
     def test_returns_empty_when_model_has_no_annotations(self) -> None:
         """Return an empty mapping when no matching annotations exist."""
@@ -49,7 +49,7 @@ class TestAnnotatedFields:
         user = UserWithUnionAnnotation(id=1, name="John Doe")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(1, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(1, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_matches_annotations_with_direct_annotated_types(self) -> None:
@@ -58,7 +58,7 @@ class TestAnnotatedFields:
         user = UserWithAnnotatedAnnotation(id=1, name="John Doe")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(1, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(1, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_includes_explicit_none_values(self) -> None:
@@ -73,7 +73,7 @@ class TestAnnotatedFields:
         user = _UserOptionalPrimaryKey(id=None, name="John Doe")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(None, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(None, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_includes_falsy_non_none_values(self) -> None:
@@ -82,7 +82,7 @@ class TestAnnotatedFields:
         user = User(id=0, name="Zero")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(0, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(0, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_matches_metadata_annotation_classes(self) -> None:
@@ -91,20 +91,20 @@ class TestAnnotatedFields:
         user = User(id=1, name="John Doe")
         annotated_user = UserWithAnnotatedAnnotation(id=2, name="Jane")
 
-        assert user.get_annotated_fields(_PrimaryKeyAnnotation) == {
-            "id": _field_info(
+        assert user.get_annotated_fields(PrimaryKeyAnnotation) == {
+            "id": build_field_info(
                 1,
                 PrimaryKey,
-                _PrimaryKeyAnnotation,
-                matched_metadata=(_PrimaryKeyAnnotation,),
+                PrimaryKeyAnnotation,
+                matched_metadata=(PrimaryKeyAnnotation,),
             )
         }
-        assert annotated_user.get_annotated_fields(_PrimaryKeyAnnotation) == {
-            "id": _field_info(
+        assert annotated_user.get_annotated_fields(PrimaryKeyAnnotation) == {
+            "id": build_field_info(
                 2,
                 PrimaryKey,
-                _PrimaryKeyAnnotation,
-                matched_metadata=(_PrimaryKeyAnnotation,),
+                PrimaryKeyAnnotation,
+                matched_metadata=(PrimaryKeyAnnotation,),
             )
         }
 
@@ -125,7 +125,7 @@ class TestAnnotatedFields:
         model = _ModelWithTwoAnnotatedFields(first=1, second=2)
 
         assert model.get_annotated_fields(_OtherAnnotation) == {
-            "second": _field_info(
+            "second": build_field_info(
                 2,
                 other_annotation,
                 _OtherAnnotation,
@@ -133,14 +133,14 @@ class TestAnnotatedFields:
             )
         }
 
-        assert model.get_annotated_fields(_PrimaryKeyAnnotation, _OtherAnnotation) == {
-            "first": _field_info(
+        assert model.get_annotated_fields(PrimaryKeyAnnotation, _OtherAnnotation) == {
+            "first": build_field_info(
                 1,
                 PrimaryKey,
-                _PrimaryKeyAnnotation,
-                matched_metadata=(_PrimaryKeyAnnotation,),
+                PrimaryKeyAnnotation,
+                matched_metadata=(PrimaryKeyAnnotation,),
             ),
-            "second": _field_info(
+            "second": build_field_info(
                 2,
                 other_annotation,
                 _OtherAnnotation,
@@ -154,21 +154,21 @@ class TestAnnotatedFields:
         class _NestedModel(SuperModelPydanticMixin):
             """Model with nested unions carrying annotated members."""
 
-            id: (Annotated[int, _PrimaryKeyAnnotation] | str) | float
+            id: (Annotated[int, PrimaryKeyAnnotation] | str) | float
             name: str
 
         int_model = _NestedModel(id=123, name="A")
         str_model = _NestedModel(id="x", name="B")
 
-        expected = _field_info(
+        expected = build_field_info(
             123,
-            Annotated[int, _PrimaryKeyAnnotation],
-            _PrimaryKeyAnnotation,
-            matched_metadata=(_PrimaryKeyAnnotation,),
+            Annotated[int, PrimaryKeyAnnotation],
+            PrimaryKeyAnnotation,
+            matched_metadata=(PrimaryKeyAnnotation,),
         )
 
-        assert int_model.get_annotated_fields(_PrimaryKeyAnnotation) == {"id": expected}
-        assert str_model.get_annotated_fields(_PrimaryKeyAnnotation) == {
+        assert int_model.get_annotated_fields(PrimaryKeyAnnotation) == {"id": expected}
+        assert str_model.get_annotated_fields(PrimaryKeyAnnotation) == {
             "id": expected._replace(value="x")
         }
 
@@ -186,7 +186,7 @@ class TestAnnotatedFields:
 
         assert not unset_user.get_annotated_fields(PrimaryKey)
         assert explicit_user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(None, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(None, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_returns_empty_for_unknown_annotations(self) -> None:
@@ -204,11 +204,11 @@ class TestAnnotatedFields:
 
         theme = ThemeConfig(accent_color="#7dd3fc", theme_name="Aurora")
 
-        annotated_fields = theme.get_annotated_fields(_ThemeColorOptions)
+        annotated_fields = theme.get_annotated_fields(ThemeColorOptions)
         field_info = annotated_fields["accent_color"]
         matched_metadata = field_info.matched_metadata
 
-        assert field_info == _field_info(
+        assert field_info == build_field_info(
             "#7dd3fc",
             ThemeColorField,
             "theme_color",
@@ -216,7 +216,7 @@ class TestAnnotatedFields:
             matched_metadata=matched_metadata,
         )
         assert len(matched_metadata) == 1
-        assert isinstance(matched_metadata[0], _ThemeColorOptions)
+        assert isinstance(matched_metadata[0], ThemeColorOptions)
         assert matched_metadata[0].palette == "northern-lights"
         assert matched_metadata[0].allow_gradients is True
 
@@ -231,7 +231,7 @@ class TestAnnotatedFields:
         user = _InheritedUser(id=5, name="Taylor", email="taylor@example.com")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(5, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(5, PrimaryKey, PrimaryKeyAnnotation)
         }
 
 
@@ -243,10 +243,10 @@ class TestAnnotatedFieldValue:
 
         user = User(id=7, name="Jane")
 
-        assert user.get_annotated_field_value(PrimaryKey) == _field_info(
+        assert user.get_annotated_field_value(PrimaryKey) == build_field_info(
             7,
             PrimaryKey,
-            _PrimaryKeyAnnotation,
+            PrimaryKeyAnnotation,
         )
 
     def test_raises_when_no_matching_field_exists(self) -> None:
@@ -289,10 +289,10 @@ class TestAnnotatedFieldValue:
 
         model = _OptionalPrimaryKeyModel(id=None, name="N")
 
-        assert model.get_annotated_field_value(PrimaryKey, allow_none=True) == _field_info(
+        assert model.get_annotated_field_value(PrimaryKey, allow_none=True) == build_field_info(
             None,
             PrimaryKey,
-            _PrimaryKeyAnnotation,
+            PrimaryKeyAnnotation,
         )
 
     def test_returns_field_info_for_falsy_values(self) -> None:
@@ -300,24 +300,24 @@ class TestAnnotatedFieldValue:
 
         user = User(id=0, name="Zero")
 
-        assert user.get_annotated_field_value(PrimaryKey) == _field_info(
+        assert user.get_annotated_field_value(PrimaryKey) == build_field_info(
             0,
             PrimaryKey,
-            _PrimaryKeyAnnotation,
+            PrimaryKeyAnnotation,
         )
 
     def test_returns_field_info_with_metadata_instances(self) -> None:
         """Return matched metadata instances for class-based lookup."""
 
         theme = ThemeConfig(accent_color="#7dd3fc", theme_name="Aurora")
-        field_info = theme.get_annotated_field_value(_ThemeColorOptions)
+        field_info = theme.get_annotated_field_value(ThemeColorOptions)
 
         assert field_info is not None
         assert field_info.value == "#7dd3fc"
         assert field_info.annotation == ThemeColorField
         assert field_info.metadata[0] == "theme_color"
         assert len(field_info.matched_metadata) == 1
-        assert isinstance(field_info.matched_metadata[0], _ThemeColorOptions)
+        assert isinstance(field_info.matched_metadata[0], ThemeColorOptions)
 
     def test_returns_the_first_match_in_field_definition_order(self) -> None:
         """Return the first matching field based on model field order."""
@@ -330,8 +330,8 @@ class TestAnnotatedFieldValue:
 
         model = _TwoPrimaryKeys(first_id=1, second_id=2)
 
-        assert model.get_annotated_field_value(PrimaryKey) == _field_info(
+        assert model.get_annotated_field_value(PrimaryKey) == build_field_info(
             1,
             PrimaryKey,
-            _PrimaryKeyAnnotation,
+            PrimaryKeyAnnotation,
         )
