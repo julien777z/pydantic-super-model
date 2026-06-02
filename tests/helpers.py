@@ -1,7 +1,7 @@
 from pydantic_super_model import AnnotatedFieldInfo
 
 
-def _field_info(
+def build_field_info(
     value: object,
     annotation: object,
     *metadata: object,

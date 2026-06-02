@@ -3,11 +3,11 @@ from typing import Any, NamedTuple
 __all__ = ["AnnotatedFieldInfo", "FieldNotImplemented"]
 
 
-class _FieldNotImplemented:
+class FieldNotImplementedMarker:
     """Mark fields that are intentionally not implemented."""
 
 
-FieldNotImplemented = _FieldNotImplemented()
+FieldNotImplemented = FieldNotImplementedMarker()
 
 
 class AnnotatedFieldInfo(NamedTuple):

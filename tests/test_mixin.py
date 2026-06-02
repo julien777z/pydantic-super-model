@@ -3,7 +3,7 @@ from typing import Annotated
 import pytest
 
 from pydantic_super_model import SuperModelMixin, FieldNotImplemented
-from tests.helpers import _field_info
+from tests.helpers import build_field_info
 from tests.models.plain_user import (
     PlainThemeConfig,
     PlainUser,
@@ -13,8 +13,8 @@ from tests.models.plain_user import (
     PlainUserWithUnionAnnotation,
     PrimaryKey,
     ThemeColorField,
-    _PrimaryKeyAnnotation,
-    _ThemeColorOptions,
+    PrimaryKeyAnnotation,
+    ThemeColorOptions,
 )
 
 
@@ -28,7 +28,7 @@ class TestPlainClassAnnotatedFields:
 
         annotated_fields = user.get_annotated_fields(PrimaryKey)
 
-        assert annotated_fields == {"id": _field_info(1, PrimaryKey, _PrimaryKeyAnnotation)}
+        assert annotated_fields == {"id": build_field_info(1, PrimaryKey, PrimaryKeyAnnotation)}
 
     def test_returns_empty_when_model_has_no_annotations(self) -> None:
         """Return an empty mapping when no matching annotations exist."""
@@ -50,7 +50,7 @@ class TestPlainClassAnnotatedFields:
         user = PlainUserWithUnionAnnotation(id=1, name="John Doe")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(1, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(1, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_matches_annotations_with_direct_annotated_types(self) -> None:
@@ -59,7 +59,7 @@ class TestPlainClassAnnotatedFields:
         user = PlainUserWithAnnotatedAnnotation(id=1, name="John Doe")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(1, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(1, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_includes_none_values(self) -> None:
@@ -76,7 +76,7 @@ class TestPlainClassAnnotatedFields:
         user = _PlainOptionalPK(name="A")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(None, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(None, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_includes_falsy_non_none_values(self) -> None:
@@ -85,7 +85,7 @@ class TestPlainClassAnnotatedFields:
         user = PlainUser(id=0, name="Zero")
 
         assert user.get_annotated_fields(PrimaryKey) == {
-            "id": _field_info(0, PrimaryKey, _PrimaryKeyAnnotation)
+            "id": build_field_info(0, PrimaryKey, PrimaryKeyAnnotation)
         }
 
     def test_matches_metadata_annotation_classes(self) -> None:
@@ -93,12 +93,12 @@ class TestPlainClassAnnotatedFields:
 
         user = PlainUser(id=1, name="John Doe")
 
-        assert user.get_annotated_fields(_PrimaryKeyAnnotation) == {
-            "id": _field_info(
+        assert user.get_annotated_fields(PrimaryKeyAnnotation) == {
+            "id": build_field_info(
                 1,
                 PrimaryKey,
-                _PrimaryKeyAnnotation,
-                matched_metadata=(_PrimaryKeyAnnotation,),
+                PrimaryKeyAnnotation,
+                matched_metadata=(PrimaryKeyAnnotation,),
             )
         }
 
@@ -107,11 +107,11 @@ class TestPlainClassAnnotatedFields:
 
         theme = PlainThemeConfig(accent_color="#7dd3fc", theme_name="Aurora")
 
-        annotated_fields = theme.get_annotated_fields(_ThemeColorOptions)
+        annotated_fields = theme.get_annotated_fields(ThemeColorOptions)
         field_info = annotated_fields["accent_color"]
         matched_metadata = field_info.matched_metadata
 
-        assert field_info == _field_info(
+        assert field_info == build_field_info(
             "#7dd3fc",
             ThemeColorField,
             "theme_color",
@@ -119,7 +119,7 @@ class TestPlainClassAnnotatedFields:
             matched_metadata=matched_metadata,
         )
         assert len(matched_metadata) == 1
-        assert isinstance(matched_metadata[0], _ThemeColorOptions)
+        assert isinstance(matched_metadata[0], ThemeColorOptions)
         assert matched_metadata[0].palette == "northern-lights"
         assert matched_metadata[0].allow_gradients is True
 
@@ -132,10 +132,10 @@ class TestPlainClassAnnotatedFieldValue:
 
         user = PlainUser(id=7, name="Jane")
 
-        assert user.get_annotated_field_value(PrimaryKey) == _field_info(
+        assert user.get_annotated_field_value(PrimaryKey) == build_field_info(
             7,
             PrimaryKey,
-            _PrimaryKeyAnnotation,
+            PrimaryKeyAnnotation,
         )
 
     def test_raises_when_no_matching_field_exists(self) -> None:
@@ -158,10 +158,10 @@ class TestPlainClassAnnotatedFieldValue:
 
         user = PlainUser(id=0, name="Zero")
 
-        assert user.get_annotated_field_value(PrimaryKey) == _field_info(
+        assert user.get_annotated_field_value(PrimaryKey) == build_field_info(
             0,
             PrimaryKey,
-            _PrimaryKeyAnnotation,
+            PrimaryKeyAnnotation,
         )
 
 

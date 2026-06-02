@@ -4,7 +4,7 @@ from typing import Annotated, Union, get_args, get_origin, get_type_hints
 from pydantic_super_model.annotations import AnnotatedFieldInfo
 
 
-def _matches_requested_annotation(candidate: object, annotations: tuple[object, ...]) -> bool:
+def matches_requested_annotation(candidate: object, annotations: tuple[object, ...]) -> bool:
     """Return whether a candidate matches any requested annotation."""
 
     for annotation in annotations:
@@ -18,7 +18,7 @@ def _matches_requested_annotation(candidate: object, annotations: tuple[object, 
     return False
 
 
-def _find_annotation_match(
+def find_annotation_match(
     annotation_type: object,
     annotations: tuple[object, ...],
 ) -> AnnotatedFieldInfo | None:
@@ -28,7 +28,7 @@ def _find_annotation_match(
 
     if origin in (Union, UnionType):
         for union_member in get_args(annotation_type):
-            match = _find_annotation_match(union_member, annotations)
+            match = find_annotation_match(union_member, annotations)
             if match is not None:
                 return match
 
@@ -39,10 +39,10 @@ def _find_annotation_match(
         matched_metadata = tuple(
             metadata_item
             for metadata_item in metadata
-            if _matches_requested_annotation(metadata_item, annotations)
+            if matches_requested_annotation(metadata_item, annotations)
         )
 
-        if matched_metadata or _matches_requested_annotation(annotation_type, annotations):
+        if matched_metadata or matches_requested_annotation(annotation_type, annotations):
             return AnnotatedFieldInfo(
                 value=None,
                 annotation=annotation_type,
@@ -50,9 +50,9 @@ def _find_annotation_match(
                 matched_metadata=matched_metadata,
             )
 
-        return _find_annotation_match(inner_type, annotations)
+        return find_annotation_match(inner_type, annotations)
 
-    if _matches_requested_annotation(annotation_type, annotations):
+    if matches_requested_annotation(annotation_type, annotations):
         return AnnotatedFieldInfo(
             value=None,
             annotation=annotation_type,
@@ -77,7 +77,7 @@ def collect_annotated_fields(
     requested_annotations = tuple(annotations)
 
     for field_name, field_type in type_hints.items():
-        annotation_match = _find_annotation_match(field_type, requested_annotations)
+        annotation_match = find_annotation_match(field_type, requested_annotations)
         if annotation_match is None:
             continue
 
