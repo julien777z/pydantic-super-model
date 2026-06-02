@@ -1,6 +1,6 @@
 from pydantic_super_model.annotation_lookup import collect_annotated_fields
-from pydantic_super_model.generic_resolution import resolve_generic_type
 from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
+from pydantic_super_model.generic_resolution import resolve_generic_type
 
 
 class SuperModelMixin:
@@ -14,9 +14,7 @@ class SuperModelMixin:
         if not_implemented_fields:
             field_names = list(not_implemented_fields)
 
-            raise NotImplementedError(
-                f"Fields {field_names} are not implemented and should be removed."
-            )
+            raise NotImplementedError(f"Fields {field_names} are not implemented and should be removed.")
 
     def get_type(self) -> type | None:
         """Get the concrete generic type parameter for the instance."""
