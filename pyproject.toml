@@ -9,8 +9,8 @@ license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [
-    "pydantic>=2.11.7",
-    "python-generics>=0.2.3"
+    "pydantic>=2.13.4",
+    "python-generics>=0.2.4"
 ]
 
 [project.urls]
@@ -19,13 +19,13 @@ Repository = "https://github.com/julien777z/pydantic-super-model"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.23",
-    "coverage>=7.6",
-    "pytest-cov>=6.1.1",
-    "black",
-    "isort",
-    "pylint",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "coverage>=7.15.0",
+    "pytest-cov>=7.1.0",
+    "black>=26.5.1",
+    "isort>=8.0.1",
+    "pylint>=4.0.6",
 ]
 
 [tool.poetry]
