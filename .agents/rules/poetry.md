@@ -1,3 +1,7 @@
+---
+alwaysApply: true
+---
+
 # Cursor Project Rules — Python 3.12 + Poetry (PEP 621)
 
 _These rules tell Cursor how to scaffold and edit this project. Stick to them unless I explicitly say otherwise._
