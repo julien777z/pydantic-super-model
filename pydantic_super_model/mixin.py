@@ -1,6 +1,14 @@
-from pydantic_super_model.annotation_lookup import collect_annotated_fields
+from typing import TypeVar
+
+from pydantic_super_model.annotation_lookup import (
+    collect_annotated_fields,
+    collect_field_metadata,
+    collect_field_names_with_metadata,
+)
 from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
 from pydantic_super_model.generic_resolution import resolve_generic_type
+
+MetadataT = TypeVar("MetadataT")
 
 
 class SuperModelMixin:
@@ -48,3 +56,21 @@ class SuperModelMixin:
             raise ValueError(f"Field '{field_name}' is None; pass allow_none=True to accept None.")
 
         return annotated_field
+
+    @classmethod
+    def field_metadata(cls, field_name: str, *metadata_types: type[MetadataT]) -> tuple[MetadataT, ...]:
+        """Return a field's metadata instances of the requested types, in declaration order."""
+
+        return collect_field_metadata(cls, field_name, *metadata_types)
+
+    @classmethod
+    def first_field_metadata(cls, field_name: str, metadata_type: type[MetadataT]) -> MetadataT | None:
+        """Return a field's first metadata instance of the requested type, or None."""
+
+        return next(iter(cls.field_metadata(field_name, metadata_type)), None)
+
+    @classmethod
+    def field_names_with_metadata(cls, *metadata_types: type[object]) -> frozenset[str]:
+        """Return the names of fields carrying metadata of any requested type."""
+
+        return collect_field_names_with_metadata(cls, *metadata_types)

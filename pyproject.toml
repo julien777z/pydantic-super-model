@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-super-model"
-version = "2.0.1"
+version = "2.1.0"
 description = "Lightweight mixin for generic introspection and Annotated field lookup"
 authors = [
     { name = "Julien Kmec", email = "me@julien.dev" }
@@ -51,6 +51,9 @@ line_length = 110
 disable = [
     "missing-module-docstring",
 ]
+
+[tool.pylint.format]
+max-line-length = 110
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

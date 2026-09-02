@@ -1,24 +1,15 @@
 from typing import Annotated, Generic, TypeVar
 
 from pydantic_super_model import SuperModelMixin
+from tests.models.metadata import (
+    BareColumnField,
+    NestedColumnField,
+    OptionalColumnField,
+    PrimaryKey,
+    PrimaryKeyAnnotation,
+    ThemeColorField,
+)
 
-
-class PrimaryKeyAnnotation:
-    pass
-
-
-class ThemeColorOptions:
-    def __init__(self, *, palette: str, allow_gradients: bool) -> None:
-        self.palette = palette
-        self.allow_gradients = allow_gradients
-
-
-PrimaryKey = Annotated[int, PrimaryKeyAnnotation]
-ThemeColorField = Annotated[
-    str,
-    "theme_color",
-    ThemeColorOptions(palette="northern-lights", allow_gradients=True),
-]
 GenericType = TypeVar("GenericType", bound=int)
 
 
@@ -86,3 +77,12 @@ class PlainThemeConfig(SuperModelMixin):
     def __init__(self, accent_color: ThemeColorField, theme_name: str) -> None:
         self.accent_color = accent_color
         self.theme_name = theme_name
+
+
+class PlainColumnConfig(SuperModelMixin):
+    """Plain-class column config model covering every annotation shape carrying metadata."""
+
+    bare: BareColumnField
+    optional: OptionalColumnField | None
+    nested: NestedColumnField
+    unannotated: str

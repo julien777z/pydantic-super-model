@@ -4,16 +4,18 @@ import pytest
 
 from pydantic_super_model import SuperModelPydanticMixin
 from tests.helpers import build_field_info
-from tests.models.user import (
+from tests.models.metadata import (
     PrimaryKey,
+    PrimaryKeyAnnotation,
     ThemeColorField,
+    ThemeColorOptions,
+)
+from tests.models.user import (
     ThemeConfig,
     User,
     UserNoAnnotations,
     UserWithAnnotatedAnnotation,
     UserWithUnionAnnotation,
-    PrimaryKeyAnnotation,
-    ThemeColorOptions,
 )
 
 
@@ -175,9 +177,7 @@ class TestAnnotatedFields:
         )
 
         assert int_model.get_annotated_fields(PrimaryKeyAnnotation) == {"id": expected}
-        assert str_model.get_annotated_fields(PrimaryKeyAnnotation) == {
-            "id": expected._replace(value="x")
-        }
+        assert str_model.get_annotated_fields(PrimaryKeyAnnotation) == {"id": expected._replace(value="x")}
 
     def test_omits_unset_default_none_values(self) -> None:
         """Omit default None values when the field was not explicitly set."""

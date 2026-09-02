@@ -123,6 +123,64 @@ field_info = user.get_annotated_field_value(PrimaryKey)
 assert field_info.value == 1
 ```
 
+### `field_metadata(field_name, *metadata_types)`
+
+A classmethod returning every metadata instance of the given types carried by one field, in declaration order. It resolves from the class, with no instance needed.
+
+```python
+from typing import Annotated
+
+from pydantic_super_model import SuperModelPydanticMixin
+
+
+class ColumnOptions:
+    def __init__(self, *, name: str) -> None:
+        self.name = name
+
+
+class Record(SuperModelPydanticMixin):
+    identifier: Annotated[str, ColumnOptions(name="identifier")]
+    label: Annotated[str, ColumnOptions(name="label")] | None = None
+    plain: str = ""
+
+
+assert [option.name for option in Record.field_metadata("identifier", ColumnOptions)] == ["identifier"]
+assert [option.name for option in Record.field_metadata("label", ColumnOptions)] == ["label"]
+assert Record.field_metadata("plain", ColumnOptions) == ()
+```
+
+Metadata is found both where Pydantic hoists it onto the field (a bare `Annotated[...]`) and where it stays nested inside a union member or a nested `Annotated`. Raises `KeyError` when the class declares no such field.
+
+### `first_field_metadata(field_name, metadata_type)`
+
+Return the field's first metadata instance of the given type, or `None`.
+
+```python
+first = Record.first_field_metadata("identifier", ColumnOptions)
+
+assert first is not None
+assert first.name == "identifier"
+assert Record.first_field_metadata("plain", ColumnOptions) is None
+```
+
+### `field_names_with_metadata(*metadata_types)`
+
+Return the names of every field carrying metadata of any given type.
+
+```python
+assert Record.field_names_with_metadata(ColumnOptions) == frozenset({"identifier", "label"})
+```
+
+### `collect_annotated_fields(model, *annotations)`
+
+Accepts an instance or a class. Given a class, annotations resolve from its type hints and every `AnnotatedFieldInfo.value` is `None`.
+
+```python
+from pydantic_super_model.annotation_lookup import collect_annotated_fields
+
+assert collect_annotated_fields(Record, ColumnOptions)["identifier"].value is None
+```
+
 ### `get_type()`
 
 Return the concrete generic type parameter supplied to the instance, or `None`.

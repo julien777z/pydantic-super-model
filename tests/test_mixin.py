@@ -2,8 +2,14 @@ from typing import Annotated
 
 import pytest
 
-from pydantic_super_model import SuperModelMixin, FieldNotImplemented
+from pydantic_super_model import FieldNotImplemented, SuperModelMixin
 from tests.helpers import build_field_info
+from tests.models.metadata import (
+    PrimaryKey,
+    PrimaryKeyAnnotation,
+    ThemeColorField,
+    ThemeColorOptions,
+)
 from tests.models.plain_user import (
     PlainThemeConfig,
     PlainUser,
@@ -11,10 +17,6 @@ from tests.models.plain_user import (
     PlainUserWithAnnotatedAnnotation,
     PlainUserWithType,
     PlainUserWithUnionAnnotation,
-    PrimaryKey,
-    ThemeColorField,
-    PrimaryKeyAnnotation,
-    ThemeColorOptions,
 )
 
 
