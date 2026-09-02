@@ -2,7 +2,6 @@ from types import UnionType
 from typing import Annotated, TypeVar, Union, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
-from pydantic.fields import FieldInfo
 
 from pydantic_super_model.annotations import AnnotatedFieldInfo
 
@@ -68,27 +67,21 @@ def find_annotation_match(
     return None
 
 
-def field_info_of(model_type: type[object], field_name: str) -> FieldInfo | None:
-    """Return a field's Pydantic info, or None when the class is not a Pydantic model."""
+def field_metadata_sources(model_type: type[object], field_name: str) -> tuple[tuple[object, ...], object]:
+    """Return a field's extracted metadata and the annotation still holding nested metadata."""
 
-    if not issubclass(model_type, BaseModel):
-        return None
+    if issubclass(model_type, BaseModel):
+        if field_name in model_type.model_fields:
+            field_info = model_type.model_fields[field_name]
 
-    if field_name not in model_type.model_fields:
-        raise KeyError(f"{model_type.__name__} has no field '{field_name}'.")
+            return tuple(field_info.metadata), field_info.annotation
+    else:
+        type_hints = get_type_hints(model_type, include_extras=True)
 
-    return model_type.model_fields[field_name]
+        if field_name in type_hints:
+            return (), type_hints[field_name]
 
-
-def field_annotation(model_type: type[object], field_name: str) -> object:
-    """Return the type hint a class declares for a field."""
-
-    type_hints = get_type_hints(model_type, include_extras=True)
-
-    if field_name not in type_hints:
-        raise KeyError(f"{model_type.__name__} has no field '{field_name}'.")
-
-    return type_hints[field_name]
+    raise KeyError(f"{model_type.__name__} has no field '{field_name}'.")
 
 
 def declared_field_names(model_type: type[object]) -> tuple[str, ...]:
@@ -110,34 +103,14 @@ def collect_field_metadata(
     if not metadata_types:
         return ()
 
-    field_info = field_info_of(model_type, field_name)
-    hoisted_metadata = tuple(field_info.metadata) if field_info is not None else ()
-    nested_annotation = (
-        field_info.annotation if field_info is not None else field_annotation(model_type, field_name)
-    )
+    extracted_metadata, nested_annotation = field_metadata_sources(model_type, field_name)
     nested_match = find_annotation_match(nested_annotation, metadata_types)
     nested_metadata = nested_match.matched_metadata if nested_match is not None else ()
 
     return tuple(
         metadata_item
-        for metadata_item in (*hoisted_metadata, *nested_metadata)
+        for metadata_item in (*extracted_metadata, *nested_metadata)
         if isinstance(metadata_item, metadata_types)
-    )
-
-
-def collect_field_names_with_metadata(
-    model_type: type[object],
-    *metadata_types: type[object],
-) -> frozenset[str]:
-    """Collect the names of fields carrying metadata of the requested types."""
-
-    if not metadata_types:
-        return frozenset()
-
-    return frozenset(
-        field_name
-        for field_name in declared_field_names(model_type)
-        if collect_field_metadata(model_type, field_name, *metadata_types)
     )
 
 

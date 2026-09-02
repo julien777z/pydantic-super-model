@@ -1,14 +1,11 @@
-from typing import TypeVar
-
 from pydantic_super_model.annotation_lookup import (
+    MetadataT,
     collect_annotated_fields,
     collect_field_metadata,
-    collect_field_names_with_metadata,
+    declared_field_names,
 )
 from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
 from pydantic_super_model.generic_resolution import resolve_generic_type
-
-MetadataT = TypeVar("MetadataT")
 
 
 class SuperModelMixin:
@@ -73,4 +70,8 @@ class SuperModelMixin:
     def field_names_with_metadata(cls, *metadata_types: type[object]) -> frozenset[str]:
         """Return the names of fields carrying metadata of any requested type."""
 
-        return collect_field_names_with_metadata(cls, *metadata_types)
+        return frozenset(
+            field_name
+            for field_name in declared_field_names(cls)
+            if cls.field_metadata(field_name, *metadata_types)
+        )

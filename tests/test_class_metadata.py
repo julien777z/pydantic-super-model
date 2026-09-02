@@ -9,11 +9,13 @@ from tests.models.metadata import ColumnOptions, PrimaryKey, PrimaryKeyAnnotatio
 from tests.models.plain_user import PlainColumnConfig, PlainUser
 from tests.models.user import ColumnConfig, User
 
-COLUMN_CONFIGS: Final = [ColumnConfig, PlainColumnConfig]
-COLUMN_CONFIG_IDS: Final = ["pydantic", "plain"]
+COLUMN_CONFIGS: Final = [
+    pytest.param(ColumnConfig, id="pydantic"),
+    pytest.param(PlainColumnConfig, id="plain"),
+]
 
 
-@pytest.mark.parametrize("model", COLUMN_CONFIGS, ids=COLUMN_CONFIG_IDS)
+@pytest.mark.parametrize("model", COLUMN_CONFIGS)
 class TestFieldMetadata:
     """Test that class-level field metadata resolves for every annotation shape."""
 
@@ -67,7 +69,7 @@ class TestFieldMetadata:
             model.field_metadata("missing", ColumnOptions)
 
 
-@pytest.mark.parametrize("model", COLUMN_CONFIGS, ids=COLUMN_CONFIG_IDS)
+@pytest.mark.parametrize("model", COLUMN_CONFIGS)
 class TestFirstFieldMetadata:
     """Test that class-level single metadata resolution returns the first match."""
 
@@ -85,7 +87,7 @@ class TestFirstFieldMetadata:
         assert model.first_field_metadata("unannotated", ColumnOptions) is None
 
 
-@pytest.mark.parametrize("model", COLUMN_CONFIGS, ids=COLUMN_CONFIG_IDS)
+@pytest.mark.parametrize("model", COLUMN_CONFIGS)
 class TestFieldNamesWithMetadata:
     """Test that class-level field name resolution selects fields by metadata type."""
 
