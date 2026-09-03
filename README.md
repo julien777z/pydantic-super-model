@@ -1,19 +1,17 @@
 # Pydantic Super Model
 
+Generic type introspection and `Annotated` field lookup for any Python class, with optional Pydantic integration.
+
 [![Coverage](https://img.shields.io/codecov/c/github/julien777z/pydantic-super-model?branch=main&label=Coverage)](https://codecov.io/gh/julien777z/pydantic-super-model)
 
-A lightweight mixin for generic type introspection and `Annotated` field lookup. Works with any Python class, with optional Pydantic integration.
+## Features
 
-**Two classes:**
-
-| Class | Base | Key extras |
-|---|---|---|
-| `SuperModelMixin` | Any class | Framework-agnostic annotation introspection |
-| `SuperModelPydanticMixin` | Pydantic `BaseModel` | Auto `FieldNotImplemented` validation, omits unset default `None` values |
-
-```python
-from pydantic_super_model import AnnotatedFieldInfo, FieldNotImplemented, SuperModelMixin, SuperModelPydanticMixin
-```
+- Look up fields by their full `Annotated` alias or by a metadata type, matching metadata instances with `isinstance`.
+- Resolve metadata from the class, with no instance, wherever it lives: hoisted onto the field, nested inside a union member, or inside a nested `Annotated`.
+- Read the concrete generic type parameter an instance was built with.
+- Reject fields marked as intentionally not implemented, checked automatically on Pydantic models.
+- Works with any Python class; the Pydantic mixin adds that validation and unset-`None` filtering.
+- Typed throughout, with a PEP 561 `py.typed` marker.
 
 ## Installation
 
@@ -21,41 +19,18 @@ from pydantic_super_model import AnnotatedFieldInfo, FieldNotImplemented, SuperM
 pip install pydantic-super-model
 ```
 
+## Mixins
+
+| Mixin | Base | Adds |
+|---|---|---|
+| `SuperModelMixin` | any Python class | annotation introspection and generic type resolution |
+| `SuperModelPydanticMixin` | Pydantic `BaseModel` | automatic `FieldNotImplemented` validation, omits unset default `None` values |
+
+The examples below use `SuperModelPydanticMixin`. Each one works the same through `SuperModelMixin`, which reads values straight off the instance.
+
 ## Quick Start
 
-### With any Python class
-
-```python
-from typing import Annotated
-
-from pydantic_super_model import SuperModelMixin
-
-
-class PrimaryKeyAnnotation:
-    pass
-
-
-PrimaryKey = Annotated[int, PrimaryKeyAnnotation]
-
-
-class User(SuperModelMixin):
-    id: PrimaryKey
-    name: str
-
-    def __init__(self, id: PrimaryKey, name: str) -> None:
-        self.id = id
-        self.name = name
-
-
-user = User(id=1, name="John Doe")
-field_info = user.get_annotated_fields(PrimaryKey)["id"]
-
-assert field_info.value == 1
-assert field_info.annotation == PrimaryKey
-assert field_info.metadata == (PrimaryKeyAnnotation,)
-```
-
-### With Pydantic
+Annotate a field with any metadata object, then ask an instance for it:
 
 ```python
 from typing import Annotated
@@ -75,57 +50,128 @@ class User(SuperModelPydanticMixin):
     name: str
 
 
-user = User(id=1, name="John Doe")
-field_info = user.get_annotated_fields(PrimaryKey)["id"]
+field_info = User(id=1, name="John Doe").get_annotated_fields(PrimaryKey)["id"]
 
-assert field_info.value == 1
-assert field_info.annotation == PrimaryKey
-assert field_info.metadata == (PrimaryKeyAnnotation,)
+field_info.value        # 1
+field_info.annotation   # PrimaryKey
+field_info.metadata     # (PrimaryKeyAnnotation,)
 ```
 
-## API
-
-### `get_annotated_fields(*annotations)`
-
-Return a dictionary of field names to `AnnotatedFieldInfo` for fields whose type hints carry any requested annotation.
-
-- Match by the full `Annotated[...]` alias or by metadata type
-- Include falsy values such as `0`
-
-**`SuperModelPydanticMixin` only:** unset default `None` values are omitted. Explicitly provided `None` is included.
+A plain class carries the same API once it inherits `SuperModelMixin`:
 
 ```python
-class UserOptional(SuperModelPydanticMixin):
+from pydantic_super_model import SuperModelMixin
+
+
+class Account(SuperModelMixin):
+    id: PrimaryKey
+
+    def __init__(self, id: PrimaryKey) -> None:
+        self.id = id
+
+
+Account(id=1).get_annotated_fields(PrimaryKey)["id"].value   # 1
+```
+
+## Annotated Field Lookup
+
+`get_annotated_fields` returns the matching fields as a mapping of names to `AnnotatedFieldInfo`. A query matches either the full `Annotated[...]` alias or a metadata type, and falsy values such as `0` are included:
+
+```python
+user = User(id=0, name="Zero")
+
+user.get_annotated_fields(PrimaryKey)["id"].value             # 0
+user.get_annotated_fields(PrimaryKeyAnnotation)["id"].value   # 0, matched by metadata type
+```
+
+`get_annotated_field_value` returns the first match instead of a mapping. It raises `ValueError` when nothing matches, unless `allow_undefined=True`, and when the matched value is `None`, unless `allow_none=True`:
+
+```python
+user.get_annotated_field_value(PrimaryKey).value   # 0
+```
+
+Querying by class matches metadata **instances**, and `matched_metadata` carries the ones that matched:
+
+```python
+class ThemeColorOptions:
+    def __init__(self, *, palette: str) -> None:
+        self.palette = palette
+
+
+class Theme(SuperModelPydanticMixin):
+    accent_color: Annotated[str, "theme_color", ThemeColorOptions(palette="northern-lights")]
+
+
+field_info = Theme(accent_color="#7dd3fc").get_annotated_fields(ThemeColorOptions)["accent_color"]
+
+field_info.metadata[0]                    # "theme_color"
+field_info.matched_metadata[0].palette    # "northern-lights"
+```
+
+A Pydantic private attribute is not a field, so it is never reported here. `get_annotated_declarations` answers the wider question — every annotated declaration, private attributes included — and is what `validate_not_implemented_fields` checks:
+
+```python
+from pydantic import PrivateAttr
+
+
+class Draft(SuperModelPydanticMixin):
+    id: PrimaryKey
+    _scratch: PrimaryKey = PrivateAttr(default=2)
+
+
+draft = Draft(id=1)
+
+sorted(draft.get_annotated_fields(PrimaryKey))         # ["id"]
+sorted(draft.get_annotated_declarations(PrimaryKey))   # ["_scratch", "id"]
+```
+
+On `SuperModelPydanticMixin` a field left at its default `None` is omitted, while a `None` passed explicitly is kept. `SuperModelMixin` keeps every `None`:
+
+```python
+class OptionalUser(SuperModelPydanticMixin):
     id: PrimaryKey | None = None
-    name: str
 
 
-# Unset default None is omitted
-assert not UserOptional(name="A").get_annotated_fields(PrimaryKey)
-
-# Explicitly provided None is included
-field_info = UserOptional(id=None, name="B").get_annotated_fields(PrimaryKey)["id"]
-assert field_info.value is None
+OptionalUser().get_annotated_fields(PrimaryKey)          # {}, unset default
+OptionalUser(id=None).get_annotated_fields(PrimaryKey)   # {"id": ...}, explicit None
 ```
 
-**`SuperModelMixin`:** all `None` values are included regardless of whether they were explicitly set.
+## Class-Level Metadata
 
-### `get_annotated_field_value(annotation, allow_none=False, allow_undefined=False)`
-
-Return the first matching `AnnotatedFieldInfo`.
-
-- Raises `ValueError` if no matching field exists (unless `allow_undefined=True`)
-- Raises `ValueError` if the matched value is `None` (unless `allow_none=True`)
+Three classmethods answer "which fields of this class carry metadata X" with no instance in hand. Metadata is found both where Pydantic hoists it onto the field, for a bare `Annotated[...]`, and where it stays nested inside a union member or a nested `Annotated`:
 
 ```python
-field_info = user.get_annotated_field_value(PrimaryKey)
+class ColumnOptions:
+    def __init__(self, *, name: str) -> None:
+        self.name = name
 
-assert field_info.value == 1
+
+class Record(SuperModelPydanticMixin):
+    identifier: Annotated[str, ColumnOptions(name="identifier")]
+    label: Annotated[str, ColumnOptions(name="label")] | None = None
+    plain: str = ""
+
+
+Record.field_metadata("identifier", ColumnOptions)[0].name   # "identifier"
+Record.field_metadata("plain", ColumnOptions)                # ()
+Record.first_field_metadata("label", ColumnOptions).name     # "label"
+Record.first_field_metadata("plain", ColumnOptions)          # None
+Record.field_names_with_metadata(ColumnOptions)              # frozenset({"identifier", "label"})
 ```
 
-### `get_type()`
+`field_metadata` takes any number of metadata types and returns every instance of them, outermost annotation first, including from every member of a union. A field the class does not declare raises `KeyError`, whether or not any metadata types are requested.
 
-Return the concrete generic type parameter supplied to the instance, or `None`.
+`collect_annotated_fields` accepts a class as well as an instance. Given a class it resolves the type hints, so every `value` is `None`:
+
+```python
+from pydantic_super_model import collect_annotated_fields
+
+collect_annotated_fields(Record, ColumnOptions)["identifier"].value   # None
+```
+
+## Generic Type Resolution
+
+`get_type` returns the concrete generic parameter the instance was built with, or `None`:
 
 ```python
 from typing import Generic, TypeVar
@@ -135,62 +181,35 @@ from pydantic_super_model import SuperModelMixin
 GenericType = TypeVar("GenericType")
 
 
-class UserWithType(SuperModelMixin, Generic[GenericType]):
-    id: GenericType
-    name: str
-
-    def __init__(self, id: GenericType, name: str) -> None:
-        self.id = id
-        self.name = name
+class Box(SuperModelMixin, Generic[GenericType]):
+    def __init__(self, value: GenericType) -> None:
+        self.value = value
 
 
-assert UserWithType[int](id=1, name="Charlie").get_type() is int
+Box[int](value=1).get_type()   # <class 'int'>
+Box(value=1).get_type()        # None, no parameter supplied
 ```
 
-### `validate_not_implemented_fields()`
+## Not-Implemented Fields
 
-Reject fields annotated with `FieldNotImplemented`. Raises `NotImplementedError` if any such fields have values.
-
-**`SuperModelPydanticMixin`:** called automatically on construction.
+`FieldNotImplemented` marks a field that should be removed rather than used. `SuperModelPydanticMixin` checks for it on construction:
 
 ```python
-from typing import Annotated
-
 from pydantic_super_model import FieldNotImplemented, SuperModelPydanticMixin
 
 
 class Experimental(SuperModelPydanticMixin):
     test_field: Annotated[int, FieldNotImplemented]
-    name: str
 
 
-Experimental(test_field=1, name="x")  # raises NotImplementedError
+Experimental(test_field=1)   # raises NotImplementedError
 ```
 
-**`SuperModelMixin`:** call manually in `__init__` or `__post_init__`.
+On a plain class, call `validate_not_implemented_fields()` yourself, usually at the end of `__init__`.
 
-```python
-from typing import Annotated
+## AnnotatedFieldInfo
 
-from pydantic_super_model import FieldNotImplemented, SuperModelMixin
-
-
-class Experimental(SuperModelMixin):
-    test_field: Annotated[int, FieldNotImplemented]
-    name: str
-
-    def __init__(self, test_field: int, name: str) -> None:
-        self.test_field = test_field
-        self.name = name
-        self.validate_not_implemented_fields()
-
-
-Experimental(test_field=1, name="x")  # raises NotImplementedError
-```
-
-### `AnnotatedFieldInfo`
-
-A `NamedTuple` returned by `get_annotated_fields` and `get_annotated_field_value`:
+The `NamedTuple` returned by `get_annotated_fields` and `get_annotated_field_value`:
 
 | Field | Type | Description |
 |---|---|---|
@@ -199,51 +218,12 @@ A `NamedTuple` returned by `get_annotated_fields` and `get_annotated_field_value
 | `metadata` | `tuple[object, ...]` | All metadata from `Annotated` |
 | `matched_metadata` | `tuple[object, ...]` | Only the metadata that matched the query |
 
-### Metadata Instance Matching
-
-When you pass a class (not an instance) to `get_annotated_fields`, it matches metadata by `isinstance`:
-
-```python
-from typing import Annotated
-
-from pydantic_super_model import SuperModelPydanticMixin
-
-
-class ThemeColorOptions:
-    def __init__(self, *, palette: str, allow_gradients: bool) -> None:
-        self.palette = palette
-        self.allow_gradients = allow_gradients
-
-
-ThemeColorField = Annotated[
-    str,
-    "theme_color",
-    ThemeColorOptions(palette="northern-lights", allow_gradients=True),
-]
-
-
-class ThemeConfig(SuperModelPydanticMixin):
-    accent_color: ThemeColorField
-
-
-theme = ThemeConfig(accent_color="#7dd3fc")
-field_info = theme.get_annotated_fields(ThemeColorOptions)["accent_color"]
-
-assert isinstance(field_info.matched_metadata[0], ThemeColorOptions)
-assert field_info.matched_metadata[0].palette == "northern-lights"
-assert field_info.matched_metadata[0].allow_gradients is True
-```
-
-## Development
-
-Install dev dependencies:
+## Local Development
 
 ```bash
-pip install "pydantic-super-model[dev]"
-```
-
-Run the test suite:
-
-```bash
-pytest
+poetry install --all-extras              # install
+poetry run pytest                        # run the tests
+poetry run black .                       # format
+poetry run isort .                       # sort imports
+poetry run pylint pydantic_super_model   # lint
 ```

@@ -19,10 +19,21 @@ class SuperModelPydanticMixin(SuperModelMixin, BaseModel):
     def get_annotated_fields(self, *annotations: object) -> dict[str, AnnotatedFieldInfo]:
         """Return matched annotated fields, omitting unset default None values."""
 
-        result = super().get_annotated_fields(*annotations)
+        return self.omit_unset_none_values(super().get_annotated_fields(*annotations))
+
+    def get_annotated_declarations(self, *annotations: object) -> dict[str, AnnotatedFieldInfo]:
+        """Return matched annotated declarations, omitting unset default None values."""
+
+        return self.omit_unset_none_values(super().get_annotated_declarations(*annotations))
+
+    def omit_unset_none_values(
+        self,
+        matched_fields: dict[str, AnnotatedFieldInfo],
+    ) -> dict[str, AnnotatedFieldInfo]:
+        """Drop matches whose value is a default None the caller never supplied."""
 
         return {
             name: info
-            for name, info in result.items()
+            for name, info in matched_fields.items()
             if info.value is not None or name in self.model_fields_set
         }
