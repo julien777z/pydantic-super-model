@@ -2,7 +2,8 @@ from pydantic_super_model.annotation_lookup import (
     MetadataT,
     collect_annotated_fields,
     collect_field_metadata,
-    declared_field_names,
+    field_declarations,
+    matching_metadata,
 )
 from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
 from pydantic_super_model.generic_resolution import resolve_generic_type
@@ -72,6 +73,6 @@ class SuperModelMixin:
 
         return frozenset(
             field_name
-            for field_name in declared_field_names(cls)
-            if cls.field_metadata(field_name, *metadata_types)
+            for field_name, declaration in field_declarations(cls).items()
+            if matching_metadata(declaration, metadata_types)
         )

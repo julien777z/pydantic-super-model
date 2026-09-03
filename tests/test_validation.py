@@ -6,10 +6,10 @@ from pydantic_super_model import FieldNotImplemented, SuperModelPydanticMixin
 
 
 class TestNotImplementedValidation:
-    """Test validation for fields marked as not implemented."""
+    """Test that fields marked as not implemented are rejected."""
 
     def test_raises_when_not_implemented_field_is_present(self) -> None:
-        """Raise when a not-implemented field is provided."""
+        """Test that it raises when a not-implemented field is provided."""
 
         class _ModelWithNotImplementedField(SuperModelPydanticMixin):
             """Model with a required not-implemented field."""
@@ -21,7 +21,7 @@ class TestNotImplementedValidation:
             _ModelWithNotImplementedField(test_field=1, name="x")
 
     def test_allows_unset_optional_not_implemented_fields(self) -> None:
-        """Allow optional not-implemented fields when they remain unset."""
+        """Test that it allows optional not-implemented fields when they remain unset."""
 
         class _OptionalNotImplementedFieldModel(SuperModelPydanticMixin):
             """Model with an optional not-implemented field."""
@@ -34,7 +34,7 @@ class TestNotImplementedValidation:
         assert model.name == "x"
 
     def test_raises_for_falsy_non_none_values(self) -> None:
-        """Raise for falsy values when the field is still present."""
+        """Test that it raises for falsy values when the field is still present."""
 
         class _ModelWithZeroValue(SuperModelPydanticMixin):
             """Model with a falsy not-implemented field value."""

@@ -147,7 +147,7 @@ Record.field_names_with_metadata(ColumnOptions)              # frozenset({"ident
 `collect_annotated_fields` accepts a class as well as an instance. Given a class it resolves the type hints, so every `value` is `None`:
 
 ```python
-from pydantic_super_model.annotation_lookup import collect_annotated_fields
+from pydantic_super_model import collect_annotated_fields
 
 collect_annotated_fields(Record, ColumnOptions)["identifier"].value   # None
 ```

@@ -4,7 +4,7 @@ import pytest
 
 from pydantic_super_model import SuperModelMixin, SuperModelPydanticMixin
 from pydantic_super_model.annotation_lookup import collect_annotated_fields
-from tests.helpers import build_field_info
+from tests.models.annotated_field_info import build_field_info
 from tests.models.metadata import ColumnOptions, PrimaryKey, PrimaryKeyAnnotation, SearchOptions
 from tests.models.plain_user import PlainColumnConfig, PlainUser
 from tests.models.user import ColumnConfig, User
@@ -62,11 +62,19 @@ class TestFieldMetadata:
 
         assert model.field_metadata("bare") == ()
 
-    def test_raises_for_an_undeclared_field(self, model: type[SuperModelMixin]) -> None:
-        """Test that requesting metadata for an undeclared field raises."""
+    @pytest.mark.parametrize(
+        "metadata_types",
+        [pytest.param((ColumnOptions,), id="with-types"), pytest.param((), id="without-types")],
+    )
+    def test_raises_for_an_undeclared_field(
+        self,
+        model: type[SuperModelMixin],
+        metadata_types: tuple[type[object], ...],
+    ) -> None:
+        """Test that an undeclared field raises whether or not metadata types are requested."""
 
         with pytest.raises(KeyError):
-            model.field_metadata("missing", ColumnOptions)
+            model.field_metadata("missing", *metadata_types)
 
 
 @pytest.mark.parametrize("model", COLUMN_CONFIGS)

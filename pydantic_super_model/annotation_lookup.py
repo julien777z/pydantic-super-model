@@ -7,6 +7,8 @@ from pydantic_super_model.annotations import AnnotatedFieldInfo
 
 MetadataT = TypeVar("MetadataT")
 
+FieldDeclaration = tuple[tuple[object, ...], object]
+
 
 def matches_requested_annotation(candidate: object, annotations: tuple[object, ...]) -> bool:
     """Return whether a candidate matches any requested annotation."""
@@ -67,43 +69,28 @@ def find_annotation_match(
     return None
 
 
-def field_metadata_sources(model_type: type[object], field_name: str) -> tuple[tuple[object, ...], object]:
-    """Return a field's extracted metadata and the annotation still holding nested metadata."""
+def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
+    """Return each declared field's extracted metadata and its annotation, in declaration order."""
 
     if issubclass(model_type, BaseModel):
-        if field_name in model_type.model_fields:
-            field_info = model_type.model_fields[field_name]
+        return {
+            field_name: (tuple(field_info.metadata), field_info.annotation)
+            for field_name, field_info in model_type.model_fields.items()
+        }
 
-            return tuple(field_info.metadata), field_info.annotation
-    else:
-        type_hints = get_type_hints(model_type, include_extras=True)
-
-        if field_name in type_hints:
-            return (), type_hints[field_name]
-
-    raise KeyError(f"{model_type.__name__} has no field '{field_name}'.")
+    return {
+        field_name: ((), annotation)
+        for field_name, annotation in get_type_hints(model_type, include_extras=True).items()
+    }
 
 
-def declared_field_names(model_type: type[object]) -> tuple[str, ...]:
-    """Return a class's declared field names in declaration order."""
-
-    if issubclass(model_type, BaseModel):
-        return tuple(model_type.model_fields)
-
-    return tuple(get_type_hints(model_type, include_extras=True))
-
-
-def collect_field_metadata(
-    model_type: type[object],
-    field_name: str,
-    *metadata_types: type[MetadataT],
+def matching_metadata(
+    declaration: FieldDeclaration,
+    metadata_types: tuple[type[MetadataT], ...],
 ) -> tuple[MetadataT, ...]:
-    """Collect a field's metadata instances of the requested types, in declaration order."""
+    """Return a declaration's metadata instances of the requested types, in declaration order."""
 
-    if not metadata_types:
-        return ()
-
-    extracted_metadata, nested_annotation = field_metadata_sources(model_type, field_name)
+    extracted_metadata, nested_annotation = declaration
     nested_match = find_annotation_match(nested_annotation, metadata_types)
     nested_metadata = nested_match.matched_metadata if nested_match is not None else ()
 
@@ -114,8 +101,23 @@ def collect_field_metadata(
     )
 
 
+def collect_field_metadata(
+    model_type: type[object],
+    field_name: str,
+    *metadata_types: type[MetadataT],
+) -> tuple[MetadataT, ...]:
+    """Collect a field's metadata instances of the requested types, in declaration order."""
+
+    declarations = field_declarations(model_type)
+
+    if field_name not in declarations:
+        raise KeyError(f"{model_type.__name__} has no field '{field_name}'.")
+
+    return matching_metadata(declarations[field_name], metadata_types)
+
+
 def collect_annotated_fields(
-    model: object | type[object],
+    model: object,
     *annotations: object,
 ) -> dict[str, AnnotatedFieldInfo]:
     """Collect fields whose type hints carry any requested annotation."""
@@ -125,11 +127,15 @@ def collect_annotated_fields(
 
     is_class = isinstance(model, type)
     model_type = model if is_class else type(model)
+    declarations = field_declarations(model_type)
     type_hints = get_type_hints(model_type, include_extras=True)
     result: dict[str, AnnotatedFieldInfo] = {}
     requested_annotations = tuple(annotations)
 
     for field_name, field_type in type_hints.items():
+        if field_name not in declarations:
+            continue
+
         annotation_match = find_annotation_match(field_type, requested_annotations)
         if annotation_match is None:
             continue

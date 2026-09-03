@@ -1,9 +1,10 @@
 from typing import Annotated
 
 import pytest
+from pydantic import PrivateAttr
 
 from pydantic_super_model import SuperModelPydanticMixin
-from tests.helpers import build_field_info
+from tests.models.annotated_field_info import build_field_info
 from tests.models.metadata import (
     PrimaryKey,
     PrimaryKeyAnnotation,
@@ -20,10 +21,10 @@ from tests.models.user import (
 
 
 class TestAnnotatedFields:
-    """Test annotated field discovery behavior."""
+    """Test that annotated field discovery works on Pydantic models."""
 
     def test_returns_matching_annotated_fields(self) -> None:
-        """Return fields that carry the requested annotation."""
+        """Test that it returns fields that carry the requested annotation."""
 
         user = User(id=1, name="John Doe")
 
@@ -32,28 +33,28 @@ class TestAnnotatedFields:
         assert annotated_fields == {"id": build_field_info(1, PrimaryKey, PrimaryKeyAnnotation)}
 
     def test_returns_empty_when_model_has_no_annotations(self) -> None:
-        """Return an empty mapping when no matching annotations exist."""
+        """Test that it returns an empty mapping when no matching annotations exist."""
 
         user = UserNoAnnotations(id=1, name="John Doe")
 
         assert not user.get_annotated_fields(PrimaryKey)
 
     def test_matches_fields_typed_as_a_requested_bare_type(self) -> None:
-        """Match a field whose type hint is exactly a requested type."""
+        """Test that it matches a field whose type hint is exactly a requested type."""
 
         user = UserNoAnnotations(id=1, name="John Doe")
 
         assert user.get_annotated_fields(int) == {"id": build_field_info(1, int)}
 
     def test_returns_empty_when_no_annotations_are_requested(self) -> None:
-        """Return an empty mapping when no annotations are provided."""
+        """Test that it returns an empty mapping when no annotations are provided."""
 
         user = User(id=1, name="John Doe")
 
         assert not user.get_annotated_fields()
 
     def test_matches_annotations_with_union_types(self) -> None:
-        """Match annotations nested inside union type hints."""
+        """Test that it matches annotations nested inside union type hints."""
 
         user = UserWithUnionAnnotation(id=1, name="John Doe")
 
@@ -62,7 +63,7 @@ class TestAnnotatedFields:
         }
 
     def test_matches_annotations_with_direct_annotated_types(self) -> None:
-        """Match annotations defined directly with Annotated."""
+        """Test that it matches annotations defined directly with Annotated."""
 
         user = UserWithAnnotatedAnnotation(id=1, name="John Doe")
 
@@ -71,7 +72,7 @@ class TestAnnotatedFields:
         }
 
     def test_includes_explicit_none_values(self) -> None:
-        """Include annotated fields explicitly provided as None."""
+        """Test that it includes annotated fields explicitly provided as None."""
 
         class _UserOptionalPrimaryKey(SuperModelPydanticMixin):
             """Model with an optional annotated primary key."""
@@ -86,7 +87,7 @@ class TestAnnotatedFields:
         }
 
     def test_includes_falsy_non_none_values(self) -> None:
-        """Include falsy values when the field is present."""
+        """Test that it includes falsy values when the field is present."""
 
         user = User(id=0, name="Zero")
 
@@ -95,7 +96,7 @@ class TestAnnotatedFields:
         }
 
     def test_matches_metadata_annotation_classes(self) -> None:
-        """Match using the metadata annotation class itself."""
+        """Test that it matches using the metadata annotation class itself."""
 
         user = User(id=1, name="John Doe")
         annotated_user = UserWithAnnotatedAnnotation(id=2, name="Jane")
@@ -118,7 +119,7 @@ class TestAnnotatedFields:
         }
 
     def test_matches_any_requested_annotation(self) -> None:
-        """Return fields matching any provided annotation."""
+        """Test that it returns fields matching any provided annotation."""
 
         class _OtherAnnotation:
             """Metadata marker for another annotated field."""
@@ -158,7 +159,7 @@ class TestAnnotatedFields:
         }
 
     def test_handles_nested_unions_and_annotated_types(self) -> None:
-        """Return the first matching annotation found in nested unions."""
+        """Test that it returns the first matching annotation found in nested unions."""
 
         class _NestedModel(SuperModelPydanticMixin):
             """Model with nested unions carrying annotated members."""
@@ -180,7 +181,7 @@ class TestAnnotatedFields:
         assert str_model.get_annotated_fields(PrimaryKeyAnnotation) == {"id": expected._replace(value="x")}
 
     def test_omits_unset_default_none_values(self) -> None:
-        """Omit default None values when the field was not explicitly set."""
+        """Test that it omits default None values when the field was not explicitly set."""
 
         class _UserOptionalPrimaryKey(SuperModelPydanticMixin):
             """Model with an optional annotated primary key default."""
@@ -197,7 +198,7 @@ class TestAnnotatedFields:
         }
 
     def test_returns_empty_for_unknown_annotations(self) -> None:
-        """Return an empty mapping when no field carries the annotation."""
+        """Test that it returns an empty mapping when no field carries the annotation."""
 
         class _MissingAnnotation:
             """Unknown annotation marker used only in this test."""
@@ -207,7 +208,7 @@ class TestAnnotatedFields:
         assert not user.get_annotated_fields(_MissingAnnotation)
 
     def test_returns_metadata_instances_for_class_based_lookup(self) -> None:
-        """Return metadata instances when matching by metadata class."""
+        """Test that it returns metadata instances when matching by metadata class."""
 
         theme = ThemeConfig(accent_color="#7dd3fc", theme_name="Aurora")
 
@@ -228,7 +229,7 @@ class TestAnnotatedFields:
         assert matched_metadata[0].allow_gradients is True
 
     def test_includes_inherited_annotated_fields(self) -> None:
-        """Return annotated fields inherited from a parent model."""
+        """Test that it returns annotated fields inherited from a parent model."""
 
         class _InheritedUser(User):
             """Extend the base user model with another field."""
@@ -241,12 +242,25 @@ class TestAnnotatedFields:
             "id": build_field_info(5, PrimaryKey, PrimaryKeyAnnotation)
         }
 
+    def test_omits_pydantic_private_attributes(self) -> None:
+        """Test that a private attribute carrying the annotation is not reported as a field."""
+
+        class _UserWithPrivateAttribute(SuperModelPydanticMixin):
+            """Model whose private attribute carries the same annotation as a field."""
+
+            id: PrimaryKey
+            _note: PrimaryKey = PrivateAttr(default=2)
+
+        user = _UserWithPrivateAttribute(id=1)
+
+        assert set(user.get_annotated_fields(PrimaryKey)) == {"id"}
+
 
 class TestAnnotatedFieldValue:
-    """Test access to the first matching annotated field."""
+    """Test that the first matching annotated field is returned."""
 
     def test_returns_first_matching_field_info(self) -> None:
-        """Return the first matching annotated field info."""
+        """Test that it returns the first matching annotated field info."""
 
         user = User(id=7, name="Jane")
 
@@ -257,7 +271,7 @@ class TestAnnotatedFieldValue:
         )
 
     def test_raises_when_no_matching_field_exists(self) -> None:
-        """Raise when no field is annotated with the requested annotation."""
+        """Test that it raises when no field is annotated with the requested annotation."""
 
         user = UserNoAnnotations(id=1, name="X")
 
@@ -265,14 +279,14 @@ class TestAnnotatedFieldValue:
             user.get_annotated_field_value(PrimaryKey)
 
     def test_returns_none_when_undefined_is_allowed(self) -> None:
-        """Return None when no field exists and undefined values are allowed."""
+        """Test that it returns None when no field exists and undefined values are allowed."""
 
         user = UserNoAnnotations(id=1, name="X")
 
         assert user.get_annotated_field_value(PrimaryKey, allow_undefined=True) is None
 
     def test_raises_when_value_is_none_and_none_is_not_allowed(self) -> None:
-        """Raise when the matched field value is None."""
+        """Test that it raises when the matched field value is None."""
 
         class _OptionalPrimaryKeyModel(SuperModelPydanticMixin):
             """Model with an optional annotated primary key."""
@@ -286,7 +300,7 @@ class TestAnnotatedFieldValue:
             model.get_annotated_field_value(PrimaryKey)
 
     def test_returns_field_info_when_none_is_allowed(self) -> None:
-        """Return field info when allow_none is enabled."""
+        """Test that it returns field info when allow_none is enabled."""
 
         class _OptionalPrimaryKeyModel(SuperModelPydanticMixin):
             """Model with an optional annotated primary key."""
@@ -303,7 +317,7 @@ class TestAnnotatedFieldValue:
         )
 
     def test_returns_field_info_for_falsy_values(self) -> None:
-        """Return field info for falsy values other than None."""
+        """Test that it returns field info for falsy values other than None."""
 
         user = User(id=0, name="Zero")
 
@@ -314,7 +328,7 @@ class TestAnnotatedFieldValue:
         )
 
     def test_returns_field_info_with_metadata_instances(self) -> None:
-        """Return matched metadata instances for class-based lookup."""
+        """Test that it returns matched metadata instances for class-based lookup."""
 
         theme = ThemeConfig(accent_color="#7dd3fc", theme_name="Aurora")
         field_info = theme.get_annotated_field_value(ThemeColorOptions)
@@ -327,7 +341,7 @@ class TestAnnotatedFieldValue:
         assert isinstance(field_info.matched_metadata[0], ThemeColorOptions)
 
     def test_returns_the_first_match_in_field_definition_order(self) -> None:
-        """Return the first matching field based on model field order."""
+        """Test that it returns the first matching field based on model field order."""
 
         class _TwoPrimaryKeys(SuperModelPydanticMixin):
             """Model with two fields carrying the same annotation."""
