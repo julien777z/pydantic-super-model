@@ -1,4 +1,4 @@
-from typing import Annotated, Final
+from typing import Annotated, ClassVar, Final
 
 import pytest
 
@@ -178,3 +178,33 @@ class TestInheritedClassMetadata:
 
         assert _Child.field_names_with_metadata(ColumnOptions) == frozenset({"identifier", "label"})
         assert [item.name for item in _Child.field_metadata("identifier", ColumnOptions)] == ["identifier"]
+
+
+class TestMetadataAcrossAnnotationShapes:
+    """Test that metadata is resolved from shapes a single annotation walk can miss."""
+
+    def test_returns_metadata_from_every_union_member(self) -> None:
+        """Test that a union carrying two metadata types reports both of them."""
+
+        class _UnionColumn(SuperModelPydanticMixin):
+            """Model whose field unions two differently annotated members."""
+
+            column: Annotated[int, ColumnOptions(name="numeric")] | Annotated[str, SearchOptions(weight=1)]
+
+        metadata = _UnionColumn.field_metadata("column", ColumnOptions, SearchOptions)
+
+        assert [type(item) for item in metadata] == [ColumnOptions, SearchOptions]
+
+    def test_omits_class_variables_from_a_plain_class(self) -> None:
+        """Test that a plain class's class variable is not treated as a declared field."""
+
+        class _PlainWithClassVar(SuperModelMixin):
+            """Plain class declaring a class variable beside a field."""
+
+            column: Annotated[str, ColumnOptions(name="column")]
+            DEFAULT_COLUMN: ClassVar[Annotated[str, ColumnOptions(name="default")]] = "x"
+
+        assert _PlainWithClassVar.field_names_with_metadata(ColumnOptions) == frozenset({"column"})
+
+        with pytest.raises(KeyError):
+            _PlainWithClassVar.field_metadata("DEFAULT_COLUMN", ColumnOptions)

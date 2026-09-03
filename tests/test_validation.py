@@ -1,6 +1,7 @@
 from typing import Annotated
 
 import pytest
+from pydantic import PrivateAttr
 
 from pydantic_super_model import FieldNotImplemented, SuperModelPydanticMixin
 
@@ -44,3 +45,14 @@ class TestNotImplementedValidation:
 
         with pytest.raises(NotImplementedError):
             _ModelWithZeroValue(test_field=0, name="z")
+
+    def test_raises_for_not_implemented_private_attributes(self) -> None:
+        """Test that it raises when a private attribute is marked not implemented."""
+
+        class _ModelWithNotImplementedPrivateAttribute(SuperModelPydanticMixin):
+            """Model with a not-implemented private attribute."""
+
+            _test_field: Annotated[int, FieldNotImplemented] = PrivateAttr(default=1)
+
+        with pytest.raises(NotImplementedError):
+            _ModelWithNotImplementedPrivateAttribute()

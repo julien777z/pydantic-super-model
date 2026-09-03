@@ -108,6 +108,23 @@ field_info.metadata[0]                    # "theme_color"
 field_info.matched_metadata[0].palette    # "northern-lights"
 ```
 
+A Pydantic private attribute is not a field, so it is never reported here. `get_annotated_declarations` answers the wider question — every annotated declaration, private attributes included — and is what `validate_not_implemented_fields` checks:
+
+```python
+from pydantic import PrivateAttr
+
+
+class Draft(SuperModelPydanticMixin):
+    id: PrimaryKey
+    _scratch: PrimaryKey = PrivateAttr(default=2)
+
+
+draft = Draft(id=1)
+
+sorted(draft.get_annotated_fields(PrimaryKey))         # ["id"]
+sorted(draft.get_annotated_declarations(PrimaryKey))   # ["_scratch", "id"]
+```
+
 On `SuperModelPydanticMixin` a field left at its default `None` is omitted, while a `None` passed explicitly is kept. `SuperModelMixin` keeps every `None`:
 
 ```python
@@ -142,7 +159,7 @@ Record.first_field_metadata("plain", ColumnOptions)          # None
 Record.field_names_with_metadata(ColumnOptions)              # frozenset({"identifier", "label"})
 ```
 
-`field_metadata` takes any number of metadata types and returns every instance of them in declaration order. A field the class does not declare raises `KeyError`.
+`field_metadata` takes any number of metadata types and returns every instance of them, outermost annotation first, including from every member of a union. A field the class does not declare raises `KeyError`, whether or not any metadata types are requested.
 
 `collect_annotated_fields` accepts a class as well as an instance. Given a class it resolves the type hints, so every `value` is `None`:
 

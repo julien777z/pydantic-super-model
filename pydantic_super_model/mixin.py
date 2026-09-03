@@ -1,7 +1,7 @@
 from pydantic_super_model.annotation_lookup import (
     MetadataT,
+    collect_annotated_declarations,
     collect_annotated_fields,
-    collect_field_metadata,
     field_declarations,
     matching_metadata,
 )
@@ -13,9 +13,9 @@ class SuperModelMixin:
     """Mixin for annotation introspection and generic type resolution."""
 
     def validate_not_implemented_fields(self) -> None:
-        """Reject fields marked as intentionally not implemented."""
+        """Reject declarations marked as intentionally not implemented."""
 
-        not_implemented_fields = self.get_annotated_fields(FieldNotImplemented)
+        not_implemented_fields = self.get_annotated_declarations(FieldNotImplemented)
 
         if not_implemented_fields:
             field_names = list(not_implemented_fields)
@@ -31,6 +31,11 @@ class SuperModelMixin:
         """Return matched annotated fields with values and annotation metadata."""
 
         return collect_annotated_fields(self, *annotations)
+
+    def get_annotated_declarations(self, *annotations: object) -> dict[str, AnnotatedFieldInfo]:
+        """Return matched annotated declarations, including any not exposed as a field."""
+
+        return collect_annotated_declarations(self, *annotations)
 
     def get_annotated_field_value(
         self,
@@ -57,9 +62,14 @@ class SuperModelMixin:
 
     @classmethod
     def field_metadata(cls, field_name: str, *metadata_types: type[MetadataT]) -> tuple[MetadataT, ...]:
-        """Return a field's metadata instances of the requested types, in declaration order."""
+        """Return a field's metadata instances of the requested types, outermost first."""
 
-        return collect_field_metadata(cls, field_name, *metadata_types)
+        declarations = field_declarations(cls)
+
+        if field_name not in declarations:
+            raise KeyError(f"{cls.__name__} has no field '{field_name}'.")
+
+        return matching_metadata(declarations[field_name], metadata_types)
 
     @classmethod
     def first_field_metadata(cls, field_name: str, metadata_type: type[MetadataT]) -> MetadataT | None:
