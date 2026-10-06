@@ -10,10 +10,19 @@ from pydantic_super_model import (
     collect_annotated_fields,
     find_annotation_match,
 )
+from tests.models.metadata import PrimaryKey, PrimaryKeyAnnotation, ThemeColorOptions
 
 
 class TestPublicApi:
     """Test that the package-level public API exports the supported symbols."""
+
+    def test_lookup_match_and_absence(self) -> None:
+        """Test the exported lookup exposes matching metadata and an unmatched result."""
+
+        assert find_annotation_match(PrimaryKey, (PrimaryKeyAnnotation,)) == AnnotatedFieldInfo(
+            None, PrimaryKey, (PrimaryKeyAnnotation,), (PrimaryKeyAnnotation,)
+        )
+        assert find_annotation_match(PrimaryKey, (ThemeColorOptions,)) is None
 
     def test_exports_the_supported_root_symbols(self) -> None:
         """Test that it exports the supported symbols from the package root."""
