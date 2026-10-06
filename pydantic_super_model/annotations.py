@@ -1,6 +1,4 @@
-from typing import Any, NamedTuple
-
-__all__ = ["AnnotatedFieldInfo", "FieldNotImplemented"]
+__all__ = ["FieldNotImplemented"]
 
 
 class FieldNotImplementedMarker:
@@ -10,10 +8,15 @@ class FieldNotImplementedMarker:
 FieldNotImplemented = FieldNotImplementedMarker()
 
 
-class AnnotatedFieldInfo(NamedTuple):
-    """Store a matched annotated field value and its metadata."""
+def matches_requested_annotation(candidate: object, annotations: tuple[object, ...]) -> bool:
+    """Return whether a candidate matches any requested annotation."""
 
-    value: Any
-    annotation: object
-    metadata: tuple[object, ...]
-    matched_metadata: tuple[object, ...]
+    for annotation in annotations:
+        if candidate is annotation or candidate == annotation:
+            return True
+
+        if isinstance(annotation, type) and not isinstance(candidate, type):
+            if isinstance(candidate, annotation):
+                return True
+
+    return False
