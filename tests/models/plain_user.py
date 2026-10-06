@@ -1,12 +1,21 @@
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, ClassVar, Generic, TypeVar
 
 from pydantic_super_model import SuperModelMixin
 from tests.models.metadata import (
     BareColumnField,
+    ColumnOptions,
+    ForwardedColumnField,
+    ForwardedTaggedColumnField,
+    GenericAliasedColumnField,
+    IdentityColumnField,
+    NestedAliasedColumnField,
     NestedColumnField,
+    NestedForwardedColumnField,
+    NestedIdentityColumnField,
     OptionalColumnField,
     PrimaryKey,
     PrimaryKeyAnnotation,
+    TaggedColumnField,
     ThemeColorField,
 )
 
@@ -86,3 +95,45 @@ class PlainColumnConfig(SuperModelMixin):
     optional: OptionalColumnField | None
     nested: NestedColumnField
     unannotated: str
+
+
+class PlainAliasedColumnConfig(SuperModelMixin):
+    """Plain model with native named and specialized annotation aliases."""
+
+    column: NestedAliasedColumnField | None
+    generic: GenericAliasedColumnField[int]
+    identity: IdentityColumnField
+    nested_identity: NestedIdentityColumnField
+    tagged: TaggedColumnField
+    forwarded: ForwardedColumnField
+    forwarded_tagged: ForwardedTaggedColumnField
+    nested_forwarded: NestedForwardedColumnField
+
+    def __init__(
+        self,
+        column: NestedAliasedColumnField | None,
+        generic: GenericAliasedColumnField[int],
+        identity: IdentityColumnField,
+        nested_identity: NestedIdentityColumnField,
+        tagged: TaggedColumnField,
+        forwarded: ForwardedColumnField,
+        forwarded_tagged: ForwardedTaggedColumnField,
+        nested_forwarded: NestedForwardedColumnField,
+    ) -> None:
+        """Store explicitly supplied values for alias instance lookup."""
+
+        self.column = column
+        self.generic = generic
+        self.identity = identity
+        self.nested_identity = nested_identity
+        self.tagged = tagged
+        self.forwarded = forwarded
+        self.forwarded_tagged = forwarded_tagged
+        self.nested_forwarded = nested_forwarded
+
+
+class PlainClassVariableConfig(SuperModelMixin):
+    """Plain class distinguishing metadata-bearing fields and class variables."""
+
+    column: Annotated[str, ColumnOptions(name="column")]
+    DEFAULT_COLUMN: ClassVar[Annotated[str, ColumnOptions(name="default")]] = "x"

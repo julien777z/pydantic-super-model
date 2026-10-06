@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [
     "pydantic>=2.13.5",
-    "python-generics>=0.2.5"
+    "python-generics>=0.2.5",
+    "typing-extensions>=4.14.1",
+    "typing-inspection>=0.4.2"
 ]
 
 [project.urls]

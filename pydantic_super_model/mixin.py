@@ -1,12 +1,11 @@
 from pydantic_super_model.annotation_lookup import (
-    MetadataT,
     collect_annotated_declarations,
     collect_annotated_fields,
     field_declarations,
-    matching_metadata,
 )
-from pydantic_super_model.annotations import AnnotatedFieldInfo, FieldNotImplemented
+from pydantic_super_model.annotations import FieldNotImplemented
 from pydantic_super_model.generic_resolution import resolve_generic_type
+from pydantic_super_model.models import AnnotatedFieldInfo, MetadataT
 
 
 class SuperModelMixin:
@@ -69,7 +68,7 @@ class SuperModelMixin:
         if field_name not in declarations:
             raise KeyError(f"{cls.__name__} has no field '{field_name}'.")
 
-        return matching_metadata(declarations[field_name], metadata_types)
+        return declarations[field_name].matching_metadata(metadata_types)
 
     @classmethod
     def first_field_metadata(cls, field_name: str, metadata_type: type[MetadataT]) -> MetadataT | None:
@@ -84,5 +83,5 @@ class SuperModelMixin:
         return frozenset(
             field_name
             for field_name, declaration in field_declarations(cls).items()
-            if matching_metadata(declaration, metadata_types)
+            if declaration.matching_metadata(metadata_types)
         )
