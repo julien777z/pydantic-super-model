@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, get_type_hints
 
 import pytest
 from pydantic import PrivateAttr
@@ -356,3 +356,30 @@ class TestAnnotatedFieldValue:
             PrimaryKey,
             PrimaryKeyAnnotation,
         )
+
+    def test_type_hints_resolved_once_per_class(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Test that repeated lookups on one class resolve its type hints only once."""
+
+        class _CountedUser(SuperModelPydanticMixin):
+            """Model whose type hint resolutions are counted."""
+
+            id: PrimaryKey
+            name: str
+
+        resolved: list[type[object]] = []
+
+        def _counting_type_hints(model_type: type[object], include_extras: bool) -> dict[str, object]:
+            """Record each resolution before delegating to the standard library."""
+
+            resolved.append(model_type)
+
+            return get_type_hints(model_type, include_extras=include_extras)
+
+        monkeypatch.setattr("pydantic_super_model.annotation_lookup.get_type_hints", _counting_type_hints)
+
+        users = [_CountedUser(id=index, name=f"User {index}") for index in range(3)]
+
+        assert [user.get_annotated_fields(PrimaryKey) for user in users] == [
+            {"id": build_field_info(index, PrimaryKey, PrimaryKeyAnnotation)} for index in range(3)
+        ]
+        assert resolved == [_CountedUser]

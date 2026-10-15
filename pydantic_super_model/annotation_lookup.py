@@ -1,3 +1,6 @@
+from collections.abc import Mapping
+from functools import cache
+from types import MappingProxyType
 from typing import ClassVar, get_origin, get_type_hints
 
 from pydantic import BaseModel
@@ -13,6 +16,13 @@ def find_annotation_match(
     return BoundAnnotation(annotation_type).find_match(annotations)
 
 
+@cache
+def declared_type_hints(model_type: type[object]) -> Mapping[str, object]:
+    """Return a class's resolved type hints with their Annotated metadata."""
+
+    return MappingProxyType(get_type_hints(model_type, include_extras=True))
+
+
 def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
     """Return each declared field's extracted metadata and annotation, in declaration order."""
 
@@ -24,7 +34,7 @@ def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
 
     return {
         field_name: FieldDeclaration((), annotation)
-        for field_name, annotation in get_type_hints(model_type, include_extras=True).items()
+        for field_name, annotation in declared_type_hints(model_type).items()
         if get_origin(annotation) is not ClassVar
     }
 
@@ -43,7 +53,7 @@ def collect_annotated_declarations(
     requested_annotations = tuple(annotations)
     result: dict[str, AnnotatedFieldInfo] = {}
 
-    for field_name, field_type in get_type_hints(model_type, include_extras=True).items():
+    for field_name, field_type in declared_type_hints(model_type).items():
         annotation_match = BoundAnnotation(field_type).find_match(requested_annotations)
         if annotation_match is None:
             continue
