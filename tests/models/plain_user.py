@@ -1,13 +1,25 @@
-from typing import Annotated, Generic, TypeVar
+from typing import Annotated, ClassVar, Generic, TypeVar
 
 from pydantic_super_model import SuperModelMixin
 from tests.models.metadata import (
     BareColumnField,
+    ColumnOptions,
+    DefaultedAlias,
+    ForwardedColumnField,
+    ForwardedTaggedColumnField,
+    GenericAliasedColumnField,
+    IdentityColumnField,
+    NestedAliasedColumnField,
     NestedColumnField,
+    NestedForwardedColumnField,
+    NestedIdentityColumnField,
     OptionalColumnField,
     PrimaryKey,
     PrimaryKeyAnnotation,
+    ScopedColumnField,
+    TaggedColumnField,
     ThemeColorField,
+    TrailingColumnField,
 )
 
 GenericType = TypeVar("GenericType", bound=int)
@@ -86,3 +98,38 @@ class PlainColumnConfig(SuperModelMixin):
     optional: OptionalColumnField | None
     nested: NestedColumnField
     unannotated: str
+
+
+class PlainAliasedColumnConfig(SuperModelMixin):
+    """Plain model with named and specialized annotation aliases."""
+
+    column: NestedAliasedColumnField | None = None
+    generic: GenericAliasedColumnField[int] = 1
+    identity: IdentityColumnField = "value"
+    nested_identity: NestedIdentityColumnField = "nested"
+    tagged: TaggedColumnField = "tagged"
+    forwarded: ForwardedColumnField = "forwarded"
+    forwarded_tagged: ForwardedTaggedColumnField = "forwarded-tagged"
+    nested_forwarded: NestedForwardedColumnField = "nested-forwarded"
+    scoped: ScopedColumnField = "scoped"
+
+
+class PlainParameterAliasConfig(SuperModelMixin):
+    """Plain model whose aliases bind variadic and defaulted type parameters."""
+
+    trailing: TrailingColumnField
+    defaulted: DefaultedAlias
+
+
+class PlainClassVariableConfig(SuperModelMixin):
+    """Plain class distinguishing metadata-bearing fields and class variables."""
+
+    column: Annotated[str, ColumnOptions(name="column")]
+    DEFAULT_COLUMN: ClassVar[Annotated[str, ColumnOptions(name="default")]] = "x"
+
+
+class PlainCountedUser(SuperModelMixin):
+    """Plain user model whose type hint resolutions one test counts."""
+
+    id: PrimaryKey = 0
+    name: str = ""

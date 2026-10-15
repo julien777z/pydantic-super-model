@@ -1,13 +1,13 @@
-from typing import Annotated, ClassVar, Final
+from typing import Final
 
 import pytest
 
-from pydantic_super_model import SuperModelMixin, SuperModelPydanticMixin
+from pydantic_super_model import SuperModelMixin
 from pydantic_super_model.annotation_lookup import collect_annotated_fields
 from tests.models.annotated_field_info import build_field_info
 from tests.models.metadata import ColumnOptions, PrimaryKey, PrimaryKeyAnnotation, SearchOptions
-from tests.models.plain_user import PlainColumnConfig, PlainUser
-from tests.models.user import ColumnConfig, User
+from tests.models.plain_user import PlainClassVariableConfig, PlainColumnConfig, PlainUser
+from tests.models.user import ColumnConfig, InheritedColumnChild, UnionColumnConfig, User
 
 COLUMN_CONFIGS: Final = [
     pytest.param(ColumnConfig, id="pydantic"),
@@ -166,18 +166,12 @@ class TestInheritedClassMetadata:
     def test_resolves_metadata_declared_on_a_base_class(self) -> None:
         """Test that metadata for fields a subclass inherits is resolved."""
 
-        class _Base(SuperModelPydanticMixin):
-            """Base model declaring an annotated field."""
-
-            identifier: Annotated[str, ColumnOptions(name="identifier")]
-
-        class _Child(_Base):
-            """Child model declaring a second annotated field."""
-
-            label: Annotated[str, ColumnOptions(name="label")]
-
-        assert _Child.field_names_with_metadata(ColumnOptions) == frozenset({"identifier", "label"})
-        assert [item.name for item in _Child.field_metadata("identifier", ColumnOptions)] == ["identifier"]
+        assert InheritedColumnChild.field_names_with_metadata(ColumnOptions) == frozenset(
+            {"identifier", "label"}
+        )
+        assert [item.name for item in InheritedColumnChild.field_metadata("identifier", ColumnOptions)] == [
+            "identifier"
+        ]
 
 
 class TestMetadataAcrossAnnotationShapes:
@@ -186,25 +180,14 @@ class TestMetadataAcrossAnnotationShapes:
     def test_returns_metadata_from_every_union_member(self) -> None:
         """Test that a union carrying two metadata types reports both of them."""
 
-        class _UnionColumn(SuperModelPydanticMixin):
-            """Model whose field unions two differently annotated members."""
-
-            column: Annotated[int, ColumnOptions(name="numeric")] | Annotated[str, SearchOptions(weight=1)]
-
-        metadata = _UnionColumn.field_metadata("column", ColumnOptions, SearchOptions)
+        metadata = UnionColumnConfig.field_metadata("column", ColumnOptions, SearchOptions)
 
         assert [type(item) for item in metadata] == [ColumnOptions, SearchOptions]
 
     def test_omits_class_variables_from_a_plain_class(self) -> None:
         """Test that a plain class's class variable is not treated as a declared field."""
 
-        class _PlainWithClassVar(SuperModelMixin):
-            """Plain class declaring a class variable beside a field."""
-
-            column: Annotated[str, ColumnOptions(name="column")]
-            DEFAULT_COLUMN: ClassVar[Annotated[str, ColumnOptions(name="default")]] = "x"
-
-        assert _PlainWithClassVar.field_names_with_metadata(ColumnOptions) == frozenset({"column"})
+        assert PlainClassVariableConfig.field_names_with_metadata(ColumnOptions) == frozenset({"column"})
 
         with pytest.raises(KeyError):
-            _PlainWithClassVar.field_metadata("DEFAULT_COLUMN", ColumnOptions)
+            PlainClassVariableConfig.field_metadata("DEFAULT_COLUMN", ColumnOptions)

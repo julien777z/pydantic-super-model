@@ -2,8 +2,8 @@ from typing import Self
 
 from pydantic import BaseModel, model_validator
 
-from pydantic_super_model.annotations import AnnotatedFieldInfo
 from pydantic_super_model.mixin import SuperModelMixin
+from pydantic_super_model.models import AnnotatedFieldInfo
 
 
 class SuperModelPydanticMixin(SuperModelMixin, BaseModel):

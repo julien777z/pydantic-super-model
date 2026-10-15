@@ -1,41 +1,11 @@
-from types import UnionType
-from typing import (
-    Annotated,
-    ClassVar,
-    NamedTuple,
-    TypeVar,
-    Union,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from collections.abc import Mapping
+from functools import cache
+from types import MappingProxyType
+from typing import ClassVar, TypeVar, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
-from pydantic_super_model.annotations import AnnotatedFieldInfo
-
-MetadataT = TypeVar("MetadataT")
-
-
-class FieldDeclaration(NamedTuple):
-    """Store a field's extracted metadata and the annotation holding its nested metadata."""
-
-    metadata: tuple[object, ...]
-    annotation: object
-
-
-def matches_requested_annotation(candidate: object, annotations: tuple[object, ...]) -> bool:
-    """Return whether a candidate matches any requested annotation."""
-
-    for annotation in annotations:
-        if candidate is annotation or candidate == annotation:
-            return True
-
-        if isinstance(annotation, type) and not isinstance(candidate, type):
-            if isinstance(candidate, annotation):
-                return True
-
-    return False
+from pydantic_super_model.models import AnnotatedFieldInfo, BoundAnnotation, FieldDeclaration
 
 
 def find_annotation_match(
@@ -44,63 +14,38 @@ def find_annotation_match(
 ) -> AnnotatedFieldInfo | None:
     """Return the first matched annotation carried by a type hint."""
 
-    origin = get_origin(annotation_type)
-
-    if origin in (Union, UnionType):
-        for union_member in get_args(annotation_type):
-            match = find_annotation_match(union_member, annotations)
-            if match is not None:
-                return match
-
-        return None
-
-    if origin is Annotated:
-        inner_type, *metadata = get_args(annotation_type)
-        matched_metadata = tuple(
-            metadata_item
-            for metadata_item in metadata
-            if matches_requested_annotation(metadata_item, annotations)
-        )
-
-        if matched_metadata or matches_requested_annotation(annotation_type, annotations):
-            return AnnotatedFieldInfo(
-                value=None,
-                annotation=annotation_type,
-                metadata=tuple(metadata),
-                matched_metadata=matched_metadata,
-            )
-
-        return find_annotation_match(inner_type, annotations)
-
-    if matches_requested_annotation(annotation_type, annotations):
-        return AnnotatedFieldInfo(
-            value=None,
-            annotation=annotation_type,
-            metadata=(),
-            matched_metadata=(),
-        )
-
-    return None
+    return BoundAnnotation(annotation_type).find_match(annotations)
 
 
-def annotation_metadata(annotation: object) -> tuple[object, ...]:
-    """Return every metadata item an annotation carries, outermost first."""
+@cache
+def declared_type_hints(model_type: type[object]) -> Mapping[str, object]:
+    """Return a class's resolved type hints with their Annotated metadata."""
 
-    origin = get_origin(annotation)
+    return MappingProxyType(get_type_hints(model_type, include_extras=True))
 
-    if origin in (Union, UnionType):
-        return tuple(
-            metadata_item
-            for union_member in get_args(annotation)
-            for metadata_item in annotation_metadata(union_member)
-        )
 
-    if origin is Annotated:
-        inner_type, *metadata = get_args(annotation)
+def model_argument_bindings(model_type: type[object]) -> Mapping[TypeVar, BoundAnnotation]:
+    """Return the type arguments of every parametrized Pydantic model a class derives from, by parameter."""
 
-        return (*metadata, *annotation_metadata(inner_type))
+    bindings: dict[TypeVar, BoundAnnotation] = {}
 
-    return ()
+    for model_class in model_type.__mro__:
+        if model_class is BaseModel or not issubclass(model_class, BaseModel):
+            continue
+
+        generic_metadata = model_class.__pydantic_generic_metadata__
+        origin = generic_metadata["origin"]
+
+        if origin is None:
+            continue
+
+        parameters = origin.__pydantic_generic_metadata__["parameters"]
+        enclosing_bindings = MappingProxyType(dict(bindings))
+
+        for parameter, argument in zip(parameters, generic_metadata["args"]):
+            bindings.setdefault(parameter, BoundAnnotation(argument, enclosing_bindings))
+
+    return MappingProxyType(bindings)
 
 
 def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
@@ -114,22 +59,9 @@ def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
 
     return {
         field_name: FieldDeclaration((), annotation)
-        for field_name, annotation in get_type_hints(model_type, include_extras=True).items()
+        for field_name, annotation in declared_type_hints(model_type).items()
         if get_origin(annotation) is not ClassVar
     }
-
-
-def matching_metadata(
-    declaration: FieldDeclaration,
-    metadata_types: tuple[type[MetadataT], ...],
-) -> tuple[MetadataT, ...]:
-    """Return a declaration's metadata instances of the requested types, outermost first."""
-
-    return tuple(
-        metadata_item
-        for metadata_item in (*declaration.metadata, *annotation_metadata(declaration.annotation))
-        if isinstance(metadata_item, metadata_types)
-    )
 
 
 def collect_annotated_declarations(
@@ -143,11 +75,12 @@ def collect_annotated_declarations(
 
     is_class = isinstance(model, type)
     model_type = model if is_class else type(model)
-    requested_annotations = tuple(annotations)
+    bindings = model_argument_bindings(model_type)
     result: dict[str, AnnotatedFieldInfo] = {}
 
-    for field_name, field_type in get_type_hints(model_type, include_extras=True).items():
-        annotation_match = find_annotation_match(field_type, requested_annotations)
+    for field_name, field_type in declared_type_hints(model_type).items():
+        annotation_match = BoundAnnotation(field_type, bindings).find_match(annotations)
+
         if annotation_match is None:
             continue
 
