@@ -3,7 +3,7 @@ from typing import Annotated, get_type_hints
 import pytest
 from pydantic import PrivateAttr
 
-from pydantic_super_model import SuperModelPydanticMixin
+from pydantic_super_model import SuperModelMixin, SuperModelPydanticMixin, find_annotation_match
 from tests.models.annotated_field_info import build_field_info
 from tests.models.metadata import (
     PrimaryKey,
@@ -255,6 +255,36 @@ class TestAnnotatedFields:
 
         assert set(user.get_annotated_fields(PrimaryKey)) == {"id"}
 
+    @pytest.mark.parametrize("mixin", [SuperModelPydanticMixin, SuperModelMixin], ids=["pydantic", "plain"])
+    def test_type_hints_resolved_once_per_class(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        mixin: type[SuperModelMixin],
+    ) -> None:
+        """Test that repeated lookups on one class resolve its type hints only once."""
+
+        class _CountedUser(mixin):
+            """Model whose type hint resolutions are counted."""
+
+            id: PrimaryKey = 0
+            name: str = ""
+
+        resolved: list[type[object]] = []
+
+        def _counting_type_hints(model_type: type[object], include_extras: bool) -> dict[str, object]:
+            """Record each resolution before delegating to the standard library."""
+
+            resolved.append(model_type)
+
+            return get_type_hints(model_type, include_extras=include_extras)
+
+        monkeypatch.setattr("pydantic_super_model.annotation_lookup.get_type_hints", _counting_type_hints)
+
+        lookups = [_CountedUser().get_annotated_fields(PrimaryKey) for _ in range(3)]
+
+        assert lookups == [{"id": build_field_info(0, PrimaryKey, PrimaryKeyAnnotation)}] * 3
+        assert resolved == [_CountedUser]
+
 
 class TestAnnotatedFieldValue:
     """Test that the first matching annotated field is returned."""
@@ -357,29 +387,24 @@ class TestAnnotatedFieldValue:
             PrimaryKeyAnnotation,
         )
 
-    def test_type_hints_resolved_once_per_class(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        """Test that repeated lookups on one class resolve its type hints only once."""
 
-        class _CountedUser(SuperModelPydanticMixin):
-            """Model whose type hint resolutions are counted."""
+class TestFindAnnotationMatch:
+    """Test that a single type hint is matched against requested annotations."""
 
-            id: PrimaryKey
-            name: str
+    @pytest.mark.parametrize(
+        ("annotations", "expected"),
+        [
+            pytest.param(
+                (PrimaryKeyAnnotation,),
+                build_field_info(
+                    None, PrimaryKey, PrimaryKeyAnnotation, matched_metadata=(PrimaryKeyAnnotation,)
+                ),
+                id="match",
+            ),
+            pytest.param((ThemeColorOptions,), None, id="absent"),
+        ],
+    )
+    def test_returns_match_or_none(self, annotations: tuple[object, ...], expected: object) -> None:
+        """Test that the matched annotation is returned, or None when nothing matches."""
 
-        resolved: list[type[object]] = []
-
-        def _counting_type_hints(model_type: type[object], include_extras: bool) -> dict[str, object]:
-            """Record each resolution before delegating to the standard library."""
-
-            resolved.append(model_type)
-
-            return get_type_hints(model_type, include_extras=include_extras)
-
-        monkeypatch.setattr("pydantic_super_model.annotation_lookup.get_type_hints", _counting_type_hints)
-
-        users = [_CountedUser(id=index, name=f"User {index}") for index in range(3)]
-
-        assert [user.get_annotated_fields(PrimaryKey) for user in users] == [
-            {"id": build_field_info(index, PrimaryKey, PrimaryKeyAnnotation)} for index in range(3)
-        ]
-        assert resolved == [_CountedUser]
+        assert find_annotation_match(PrimaryKey, annotations) == expected

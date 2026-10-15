@@ -11,7 +11,6 @@ requires-python = ">=3.11,<3.15"
 dependencies = [
     "pydantic>=2.13.5",
     "python-generics>=0.2.5",
-    "typing-extensions>=4.14.1",
     "typing-inspection>=0.4.2"
 ]
 
@@ -28,6 +27,7 @@ dev = [
     "black>=26.5.1",
     "isort>=9.0.1",
     "pylint>=4.0.8",
+    "typing-extensions>=4.14.1",
 ]
 
 [tool.poetry]

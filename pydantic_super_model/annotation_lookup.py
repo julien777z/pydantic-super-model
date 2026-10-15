@@ -9,7 +9,8 @@ from pydantic_super_model.models import AnnotatedFieldInfo, BoundAnnotation, Fie
 
 
 def find_annotation_match(
-    annotation_type: object, annotations: tuple[object, ...]
+    annotation_type: object,
+    annotations: tuple[object, ...],
 ) -> AnnotatedFieldInfo | None:
     """Return the first matched annotation carried by a type hint."""
 
@@ -50,11 +51,11 @@ def collect_annotated_declarations(
 
     is_class = isinstance(model, type)
     model_type = model if is_class else type(model)
-    requested_annotations = tuple(annotations)
     result: dict[str, AnnotatedFieldInfo] = {}
 
     for field_name, field_type in declared_type_hints(model_type).items():
-        annotation_match = BoundAnnotation(field_type).find_match(requested_annotations)
+        annotation_match = find_annotation_match(field_type, annotations)
+
         if annotation_match is None:
             continue
 

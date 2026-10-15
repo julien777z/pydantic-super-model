@@ -15,8 +15,10 @@ from tests.models.metadata import (
     OptionalColumnField,
     PrimaryKey,
     PrimaryKeyAnnotation,
+    ScopedColumnField,
     TaggedColumnField,
     ThemeColorField,
+    TrailingColumnField,
 )
 
 GenericType = TypeVar("GenericType", bound=int)
@@ -98,38 +100,23 @@ class PlainColumnConfig(SuperModelMixin):
 
 
 class PlainAliasedColumnConfig(SuperModelMixin):
-    """Plain model with native named and specialized annotation aliases."""
+    """Plain model with named and specialized annotation aliases."""
 
-    column: NestedAliasedColumnField | None
-    generic: GenericAliasedColumnField[int]
-    identity: IdentityColumnField
-    nested_identity: NestedIdentityColumnField
-    tagged: TaggedColumnField
-    forwarded: ForwardedColumnField
-    forwarded_tagged: ForwardedTaggedColumnField
-    nested_forwarded: NestedForwardedColumnField
+    column: NestedAliasedColumnField | None = None
+    generic: GenericAliasedColumnField[int] = 1
+    identity: IdentityColumnField = "value"
+    nested_identity: NestedIdentityColumnField = "nested"
+    tagged: TaggedColumnField = "tagged"
+    forwarded: ForwardedColumnField = "forwarded"
+    forwarded_tagged: ForwardedTaggedColumnField = "forwarded-tagged"
+    nested_forwarded: NestedForwardedColumnField = "nested-forwarded"
+    scoped: ScopedColumnField = "scoped"
 
-    def __init__(
-        self,
-        column: NestedAliasedColumnField | None,
-        generic: GenericAliasedColumnField[int],
-        identity: IdentityColumnField,
-        nested_identity: NestedIdentityColumnField,
-        tagged: TaggedColumnField,
-        forwarded: ForwardedColumnField,
-        forwarded_tagged: ForwardedTaggedColumnField,
-        nested_forwarded: NestedForwardedColumnField,
-    ) -> None:
-        """Store explicitly supplied values for alias instance lookup."""
 
-        self.column = column
-        self.generic = generic
-        self.identity = identity
-        self.nested_identity = nested_identity
-        self.tagged = tagged
-        self.forwarded = forwarded
-        self.forwarded_tagged = forwarded_tagged
-        self.nested_forwarded = nested_forwarded
+class PlainVariadicAliasConfig(SuperModelMixin):
+    """Plain model whose alias declares parameters around a variadic one."""
+
+    trailing: TrailingColumnField
 
 
 class PlainClassVariableConfig(SuperModelMixin):

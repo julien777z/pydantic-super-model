@@ -1,6 +1,6 @@
 from typing import Annotated, TypeVar
 
-from typing_extensions import TypeAliasType
+from typing_extensions import TypeAliasType, TypeVarTuple
 
 
 class PrimaryKeyAnnotation:
@@ -78,17 +78,12 @@ NestedForwardedColumnField = ForwardedAlias[
 ]
 
 
-def create_native_recursive_aliases() -> tuple[object, ...]:
-    """Declare actual lazy recursive aliases using the interpreter's native syntax."""
+AliasValues = TypeVarTuple("AliasValues")
+TrailingAlias = TypeAliasType(
+    "TrailingAlias", Annotated[AliasValue, SearchOptions(weight=13)], type_params=(AliasValues, AliasValue)
+)
+TrailingColumnField = TrailingAlias[str, bytes, Annotated[str, ColumnOptions(name="trailing-argument")]]
 
-    namespace: dict[str, object] = {"Annotated": Annotated, "ColumnOptions": ColumnOptions}
-    exec(
-        "type Recursive = Annotated[Recursive | int, ColumnOptions(name='recursive')]\n"
-        "type Expanding[T] = Annotated[T, ColumnOptions(name='expanding')] | Expanding[list[T]]\n"
-        "ExpandingInteger = Expanding[int]\n"
-        "type Identity[T] = T\n"
-        "type AliasLoop = Identity[AliasLoop]\n",
-        namespace,
-    )
-
-    return namespace["Recursive"], namespace["ExpandingInteger"], namespace["AliasLoop"]
+FreeParameterAlias = TypeAliasType("FreeParameterAlias", Annotated[AliasValue, SearchOptions(weight=17)])
+ScopedAlias = TypeAliasType("ScopedAlias", FreeParameterAlias, type_params=(AliasValue,))
+ScopedColumnField = ScopedAlias[Annotated[str, ColumnOptions(name="caller-argument")]]

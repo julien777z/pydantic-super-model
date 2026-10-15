@@ -1,4 +1,3 @@
-import typing
 from typing import Annotated, Generic, TypeVar
 
 from pydantic_super_model import SuperModelPydanticMixin
@@ -16,6 +15,7 @@ from tests.models.metadata import (
     OptionalColumnField,
     PrimaryKey,
     PrimaryKeyAnnotation,
+    ScopedColumnField,
     SearchOptions,
     TaggedColumnField,
     ThemeColorField,
@@ -76,7 +76,7 @@ class ColumnConfig(SuperModelPydanticMixin):
 
 
 class AliasedColumnConfig(SuperModelPydanticMixin):
-    """Model with native named and specialized annotation aliases."""
+    """Model with named and specialized annotation aliases."""
 
     column: NestedAliasedColumnField | None = None
     generic: GenericAliasedColumnField[int] = 1
@@ -86,19 +86,7 @@ class AliasedColumnConfig(SuperModelPydanticMixin):
     forwarded: ForwardedColumnField = "forwarded"
     forwarded_tagged: ForwardedTaggedColumnField = "forwarded-tagged"
     nested_forwarded: NestedForwardedColumnField = "nested-forwarded"
-
-
-def create_native_column_model() -> type[SuperModelPydanticMixin]:
-    """Declare a test model using the interpreter's native named alias class."""
-
-    native_alias = typing.TypeAliasType("NativeColumn", Annotated[str, ColumnOptions(name="native")])
-
-    class NativeColumn(SuperModelPydanticMixin):
-        """Model carrying a standard-library named alias."""
-
-        column: native_alias | None = None
-
-    return NativeColumn
+    scoped: ScopedColumnField = "scoped"
 
 
 class InheritedColumnBase(SuperModelPydanticMixin):

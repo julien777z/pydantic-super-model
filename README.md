@@ -8,6 +8,7 @@ Generic type introspection and `Annotated` field lookup for any Python class, wi
 
 - Look up fields by their full `Annotated` alias or by a metadata type, matching metadata instances with `isinstance`.
 - Resolve metadata from the class, with no instance, wherever it lives: hoisted onto the field, nested inside a union member, or inside a nested `Annotated`.
+- See through named type aliases, including generic ones: `type` statements on Python 3.12+ and `typing_extensions.TypeAliasType`.
 - Read the concrete generic type parameter an instance was built with.
 - Reject fields marked as intentionally not implemented, checked automatically on Pydantic models.
 - Works with any Python class; the Pydantic mixin adds that validation and unset-`None` filtering.
@@ -160,6 +161,24 @@ Record.field_names_with_metadata(ColumnOptions)              # frozenset({"ident
 ```
 
 `field_metadata` takes any number of metadata types and returns every instance of them, outermost annotation first, including from every member of a union. A field the class does not declare raises `KeyError`, whether or not any metadata types are requested.
+
+Named type aliases are followed too. A generic alias keeps the metadata of the argument it is given, after the alias's own metadata:
+
+```python
+class SearchOptions:
+    def __init__(self, *, weight: int) -> None:
+        self.weight = weight
+
+
+type Column[T] = Annotated[T, SearchOptions(weight=1)]
+
+
+class Table(SuperModelPydanticMixin):
+    title: Column[Annotated[str, ColumnOptions(name="title")]] = ""
+
+
+Table.field_metadata("title", SearchOptions, ColumnOptions)   # (SearchOptions(...), ColumnOptions(...))
+```
 
 `collect_annotated_fields` accepts a class as well as an instance. Given a class it resolves the type hints, so every `value` is `None`:
 
