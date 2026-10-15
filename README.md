@@ -162,7 +162,7 @@ Record.field_names_with_metadata(ColumnOptions)              # frozenset({"ident
 
 `field_metadata` takes any number of metadata types and returns every instance of them, outermost annotation first, including from every member of a union. A field the class does not declare raises `KeyError`, whether or not any metadata types are requested.
 
-Named type aliases are followed too. A generic alias keeps the metadata of the argument it is given, after the alias's own metadata:
+Named type aliases are followed too. A generic alias keeps the metadata of the argument it is given, ahead of the alias's own metadata, as Python orders nested `Annotated`. Metadata written around a named alias comes before the metadata inside it:
 
 ```python
 class SearchOptions:
@@ -177,7 +177,7 @@ class Table(SuperModelPydanticMixin):
     title: Column[Annotated[str, ColumnOptions(name="title")]] = ""
 
 
-Table.field_metadata("title", SearchOptions, ColumnOptions)   # (SearchOptions(...), ColumnOptions(...))
+Table.field_metadata("title", SearchOptions, ColumnOptions)   # (ColumnOptions(...), SearchOptions(...))
 ```
 
 `collect_annotated_fields` accepts a class as well as an instance. Given a class it resolves the type hints, so every `value` is `None`:

@@ -86,6 +86,9 @@ class BoundAnnotation(NamedTuple):
     def concrete_annotation(self) -> object:
         """Return the annotation with its bound type parameters substituted."""
 
+        if get_origin(self.annotation) is None:
+            return self.annotation
+
         parameters = getattr(self.annotation, "__parameters__", ())
 
         if not any(parameter in self.bindings for parameter in parameters) or not all(

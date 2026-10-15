@@ -116,3 +116,14 @@ class GenericColumnConfig(SuperModelPydanticMixin, Generic[AliasValue]):
 
 
 ParametrizedColumnConfig = GenericColumnConfig[Annotated[str, ColumnOptions(name="model-argument")]]
+
+
+class DerivedColumnConfig(GenericColumnConfig[Annotated[str, ColumnOptions(name="derived-argument")]]):
+    """Model deriving from a parametrized generic model."""
+
+
+class CountedUser(SuperModelPydanticMixin):
+    """User model whose type hint resolutions one test counts."""
+
+    id: PrimaryKey = 0
+    name: str = ""

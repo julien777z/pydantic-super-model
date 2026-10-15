@@ -5,7 +5,7 @@ import pytest
 from pydantic_super_model import SuperModelMixin, collect_annotated_fields, find_annotation_match
 from tests.models.metadata import ColumnOptions, NestedAliasedColumnField, SearchOptions, TaggedColumnField
 from tests.models.plain_user import PlainParameterAliasConfig
-from tests.models.user import ParametrizedColumnConfig
+from tests.models.user import DerivedColumnConfig, ParametrizedColumnConfig
 
 
 class TestNamedAliases:
@@ -152,14 +152,23 @@ class TestNamedAliases:
         assert get_args(match.annotation)[0] is str
         assert [type(item) for item in match.metadata] == [ColumnOptions, SearchOptions]
 
-    def test_parametrized_model_binds_its_arguments(self) -> None:
+    @pytest.mark.parametrize(
+        ("model", "name"),
+        [
+            pytest.param(ParametrizedColumnConfig, "model-argument", id="parametrized"),
+            pytest.param(DerivedColumnConfig, "derived-argument", id="derived"),
+        ],
+    )
+    def test_parametrized_model_binds_its_arguments(
+        self,
+        model: type[SuperModelMixin],
+        name: str,
+    ) -> None:
         """Test that a parametrized Pydantic model's arguments reach alias fields in every lookup."""
 
-        class_field = collect_annotated_fields(ParametrizedColumnConfig, ColumnOptions)["column"]
-        instance_field = ParametrizedColumnConfig(column="x").get_annotated_fields(ColumnOptions)["column"]
+        class_field = collect_annotated_fields(model, ColumnOptions)["column"]
+        instance_field = model(column="x").get_annotated_fields(ColumnOptions)["column"]
 
-        assert [item.name for item in ParametrizedColumnConfig.field_metadata("column", ColumnOptions)] == [
-            "model-argument"
-        ]
-        assert class_field.matched_metadata[0].name == "model-argument"
-        assert (instance_field.value, instance_field.matched_metadata[0].name) == ("x", "model-argument")
+        assert [item.name for item in model.field_metadata("column", ColumnOptions)] == [name]
+        assert class_field.matched_metadata[0].name == name
+        assert (instance_field.value, instance_field.matched_metadata[0].name) == ("x", name)

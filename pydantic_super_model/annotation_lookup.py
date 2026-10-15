@@ -25,26 +25,27 @@ def declared_type_hints(model_type: type[object]) -> Mapping[str, object]:
 
 
 def model_argument_bindings(model_type: type[object]) -> Mapping[TypeVar, BoundAnnotation]:
-    """Return the type arguments a parametrized Pydantic model was built with, by parameter."""
+    """Return the type arguments of every parametrized Pydantic model a class derives from, by parameter."""
 
-    if not issubclass(model_type, BaseModel):
-        return MappingProxyType({})
+    bindings: dict[TypeVar, BoundAnnotation] = {}
 
-    generic_metadata = model_type.__pydantic_generic_metadata__
-    origin = generic_metadata["origin"]
+    for model_class in model_type.__mro__:
+        if model_class is BaseModel or not issubclass(model_class, BaseModel):
+            continue
 
-    if origin is None:
-        return MappingProxyType({})
+        generic_metadata = model_class.__pydantic_generic_metadata__
+        origin = generic_metadata["origin"]
 
-    parameters = origin.__pydantic_generic_metadata__["parameters"]
+        if origin is None:
+            continue
 
-    return MappingProxyType(
-        {
-            parameter: BoundAnnotation(argument)
-            for parameter, argument in zip(parameters, generic_metadata["args"])
-            if argument is not parameter
-        }
-    )
+        parameters = origin.__pydantic_generic_metadata__["parameters"]
+        enclosing_bindings = MappingProxyType(dict(bindings))
+
+        for parameter, argument in zip(parameters, generic_metadata["args"]):
+            bindings.setdefault(parameter, BoundAnnotation(argument, enclosing_bindings))
+
+    return MappingProxyType(bindings)
 
 
 def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:

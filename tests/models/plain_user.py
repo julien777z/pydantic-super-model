@@ -126,3 +126,10 @@ class PlainClassVariableConfig(SuperModelMixin):
 
     column: Annotated[str, ColumnOptions(name="column")]
     DEFAULT_COLUMN: ClassVar[Annotated[str, ColumnOptions(name="default")]] = "x"
+
+
+class PlainCountedUser(SuperModelMixin):
+    """Plain user model whose type hint resolutions one test counts."""
+
+    id: PrimaryKey = 0
+    name: str = ""

@@ -3,7 +3,7 @@ from typing import Annotated, get_type_hints
 import pytest
 from pydantic import PrivateAttr
 
-from pydantic_super_model import SuperModelMixin, SuperModelPydanticMixin, find_annotation_match
+from pydantic_super_model import SuperModelMixin, SuperModelPydanticMixin
 from tests.models.annotated_field_info import build_field_info
 from tests.models.metadata import (
     PrimaryKey,
@@ -11,7 +11,9 @@ from tests.models.metadata import (
     ThemeColorField,
     ThemeColorOptions,
 )
+from tests.models.plain_user import PlainCountedUser
 from tests.models.user import (
+    CountedUser,
     ThemeConfig,
     User,
     UserNoAnnotations,
@@ -255,19 +257,13 @@ class TestAnnotatedFields:
 
         assert set(user.get_annotated_fields(PrimaryKey)) == {"id"}
 
-    @pytest.mark.parametrize("mixin", [SuperModelPydanticMixin, SuperModelMixin], ids=["pydantic", "plain"])
+    @pytest.mark.parametrize("model", [CountedUser, PlainCountedUser], ids=["pydantic", "plain"])
     def test_type_hints_resolved_once_per_class(
         self,
         monkeypatch: pytest.MonkeyPatch,
-        mixin: type[SuperModelMixin],
+        model: type[SuperModelMixin],
     ) -> None:
         """Test that repeated lookups on one class resolve its type hints only once."""
-
-        class _CountedUser(mixin):
-            """Model whose type hint resolutions are counted."""
-
-            id: PrimaryKey = 0
-            name: str = ""
 
         resolved: list[type[object]] = []
 
@@ -280,10 +276,10 @@ class TestAnnotatedFields:
 
         monkeypatch.setattr("pydantic_super_model.annotation_lookup.get_type_hints", _counting_type_hints)
 
-        lookups = [_CountedUser().get_annotated_fields(PrimaryKey) for _ in range(3)]
+        lookups = [model().get_annotated_fields(PrimaryKey) for _ in range(3)]
 
         assert lookups == [{"id": build_field_info(0, PrimaryKey, PrimaryKeyAnnotation)}] * 3
-        assert resolved == [_CountedUser]
+        assert resolved == [model]
 
 
 class TestAnnotatedFieldValue:
@@ -386,25 +382,3 @@ class TestAnnotatedFieldValue:
             PrimaryKey,
             PrimaryKeyAnnotation,
         )
-
-
-class TestFindAnnotationMatch:
-    """Test that a single type hint is matched against requested annotations."""
-
-    @pytest.mark.parametrize(
-        ("annotations", "expected"),
-        [
-            pytest.param(
-                (PrimaryKeyAnnotation,),
-                build_field_info(
-                    None, PrimaryKey, PrimaryKeyAnnotation, matched_metadata=(PrimaryKeyAnnotation,)
-                ),
-                id="match",
-            ),
-            pytest.param((ThemeColorOptions,), None, id="absent"),
-        ],
-    )
-    def test_returns_match_or_none(self, annotations: tuple[object, ...], expected: object) -> None:
-        """Test that the matched annotation is returned, or None when nothing matches."""
-
-        assert find_annotation_match(PrimaryKey, annotations) == expected
