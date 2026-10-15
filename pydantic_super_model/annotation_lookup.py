@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from functools import cache
 from types import MappingProxyType
-from typing import ClassVar, get_origin, get_type_hints
+from typing import ClassVar, TypeVar, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
@@ -22,6 +22,29 @@ def declared_type_hints(model_type: type[object]) -> Mapping[str, object]:
     """Return a class's resolved type hints with their Annotated metadata."""
 
     return MappingProxyType(get_type_hints(model_type, include_extras=True))
+
+
+def model_argument_bindings(model_type: type[object]) -> Mapping[TypeVar, BoundAnnotation]:
+    """Return the type arguments a parametrized Pydantic model was built with, by parameter."""
+
+    if not issubclass(model_type, BaseModel):
+        return MappingProxyType({})
+
+    generic_metadata = model_type.__pydantic_generic_metadata__
+    origin = generic_metadata["origin"]
+
+    if origin is None:
+        return MappingProxyType({})
+
+    parameters = origin.__pydantic_generic_metadata__["parameters"]
+
+    return MappingProxyType(
+        {
+            parameter: BoundAnnotation(argument)
+            for parameter, argument in zip(parameters, generic_metadata["args"])
+            if argument is not parameter
+        }
+    )
 
 
 def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
@@ -51,10 +74,11 @@ def collect_annotated_declarations(
 
     is_class = isinstance(model, type)
     model_type = model if is_class else type(model)
+    bindings = model_argument_bindings(model_type)
     result: dict[str, AnnotatedFieldInfo] = {}
 
     for field_name, field_type in declared_type_hints(model_type).items():
-        annotation_match = find_annotation_match(field_type, annotations)
+        annotation_match = BoundAnnotation(field_type, bindings).find_match(annotations)
 
         if annotation_match is None:
             continue

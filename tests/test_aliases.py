@@ -1,8 +1,11 @@
+from typing import get_args
+
 import pytest
 
-from pydantic_super_model import SuperModelMixin, collect_annotated_fields
-from tests.models.metadata import ColumnOptions, NestedAliasedColumnField, SearchOptions
-from tests.models.plain_user import PlainVariadicAliasConfig
+from pydantic_super_model import SuperModelMixin, collect_annotated_fields, find_annotation_match
+from tests.models.metadata import ColumnOptions, NestedAliasedColumnField, SearchOptions, TaggedColumnField
+from tests.models.plain_user import PlainParameterAliasConfig
+from tests.models.user import ParametrizedColumnConfig
 
 
 class TestNamedAliases:
@@ -30,26 +33,32 @@ class TestNamedAliases:
 
         assert [item.name for item in aliased_model.field_metadata(field, ColumnOptions)] == names
 
+    def test_alias_layers_outermost_first(self, aliased_model: type[SuperModelMixin]) -> None:
+        """Test that metadata around a named alias comes before the metadata inside it."""
+
+        search, column = aliased_model.field_metadata("column", SearchOptions, ColumnOptions)
+
+        assert (search.weight, column.name) == (3, "alias")
+
     @pytest.mark.parametrize(
-        ("field", "weight", "name"),
+        ("field", "name", "weight"),
         [
-            pytest.param("column", 3, "alias", id="nested-alias"),
-            pytest.param("tagged", 9, "tagged-argument", id="generic-body"),
-            pytest.param("forwarded_tagged", 11, "forwarded-tagged-argument", id="forwarded-body"),
+            pytest.param("tagged", "tagged-argument", 9, id="generic-body"),
+            pytest.param("forwarded_tagged", "forwarded-tagged-argument", 11, id="forwarded-body"),
         ],
     )
-    def test_declaration_metadata_precedes_argument(
+    def test_argument_metadata_flattens_first(
         self,
         aliased_model: type[SuperModelMixin],
         field: str,
-        weight: int,
         name: str,
+        weight: int,
     ) -> None:
-        """Test that an alias body's metadata comes before the metadata of its bound argument."""
+        """Test that a bound argument's metadata comes first, as Python flattens nested Annotated."""
 
-        search, column = aliased_model.field_metadata(field, SearchOptions, ColumnOptions)
+        column, search = aliased_model.field_metadata(field, SearchOptions, ColumnOptions)
 
-        assert (search.weight, column.name) == (weight, name)
+        assert (column.name, search.weight) == (name, weight)
 
     @pytest.mark.parametrize("field", ["identity", "forwarded", "nested_forwarded"])
     def test_bound_argument_matches_its_type(self, aliased_model: type[SuperModelMixin], field: str) -> None:
@@ -123,6 +132,34 @@ class TestNamedAliases:
     def test_parameters_after_variadic_bind_trailing_arguments(self) -> None:
         """Test that parameters after a variadic one bind the trailing arguments."""
 
-        search, column = PlainVariadicAliasConfig.field_metadata("trailing", SearchOptions, ColumnOptions)
+        column, search = PlainParameterAliasConfig.field_metadata("trailing", SearchOptions, ColumnOptions)
 
-        assert (search.weight, column.name) == (13, "trailing-argument")
+        assert (column.name, search.weight) == ("trailing-argument", 13)
+
+    def test_unwritten_argument_binds_default(self) -> None:
+        """Test that a type parameter without an argument binds its declared default."""
+
+        column, search = PlainParameterAliasConfig.field_metadata("defaulted", SearchOptions, ColumnOptions)
+
+        assert (column.name, search.weight) == ("default-argument", 19)
+
+    def test_match_substitutes_bound_arguments(self) -> None:
+        """Test that a match inside a generic alias reports its arguments substituted."""
+
+        match = find_annotation_match(TaggedColumnField, (SearchOptions,))
+
+        assert match is not None
+        assert get_args(match.annotation)[0] is str
+        assert [type(item) for item in match.metadata] == [ColumnOptions, SearchOptions]
+
+    def test_parametrized_model_binds_its_arguments(self) -> None:
+        """Test that a parametrized Pydantic model's arguments reach alias fields in every lookup."""
+
+        class_field = collect_annotated_fields(ParametrizedColumnConfig, ColumnOptions)["column"]
+        instance_field = ParametrizedColumnConfig(column="x").get_annotated_fields(ColumnOptions)["column"]
+
+        assert [item.name for item in ParametrizedColumnConfig.field_metadata("column", ColumnOptions)] == [
+            "model-argument"
+        ]
+        assert class_field.matched_metadata[0].name == "model-argument"
+        assert (instance_field.value, instance_field.matched_metadata[0].name) == ("x", "model-argument")

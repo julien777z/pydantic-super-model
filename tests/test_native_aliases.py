@@ -19,7 +19,7 @@ class TestNativeAliases:
         ("field", "names"),
         [
             pytest.param("column", ["native"], id="optional"),
-            pytest.param("tagged", ["native-tagged", "native-argument"], id="generic"),
+            pytest.param("tagged", ["native-argument", "native-tagged"], id="generic"),
         ],
     )
     def test_field_metadata_through_alias(

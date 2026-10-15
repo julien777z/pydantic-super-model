@@ -2,6 +2,7 @@ from typing import Annotated, Generic, TypeVar
 
 from pydantic_super_model import SuperModelPydanticMixin
 from tests.models.metadata import (
+    AliasValue,
     BareColumnField,
     ColumnOptions,
     ForwardedColumnField,
@@ -17,6 +18,7 @@ from tests.models.metadata import (
     PrimaryKeyAnnotation,
     ScopedColumnField,
     SearchOptions,
+    TaggedAlias,
     TaggedColumnField,
     ThemeColorField,
 )
@@ -105,3 +107,12 @@ class UnionColumnConfig(SuperModelPydanticMixin):
     """Model whose union members carry different metadata types."""
 
     column: Annotated[int, ColumnOptions(name="numeric")] | Annotated[str, SearchOptions(weight=1)]
+
+
+class GenericColumnConfig(SuperModelPydanticMixin, Generic[AliasValue]):
+    """Model whose alias field takes the model's own type argument."""
+
+    column: TaggedAlias[AliasValue] | None = None
+
+
+ParametrizedColumnConfig = GenericColumnConfig[Annotated[str, ColumnOptions(name="model-argument")]]

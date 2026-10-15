@@ -4,6 +4,7 @@ from pydantic_super_model import SuperModelMixin
 from tests.models.metadata import (
     BareColumnField,
     ColumnOptions,
+    DefaultedAlias,
     ForwardedColumnField,
     ForwardedTaggedColumnField,
     GenericAliasedColumnField,
@@ -113,10 +114,11 @@ class PlainAliasedColumnConfig(SuperModelMixin):
     scoped: ScopedColumnField = "scoped"
 
 
-class PlainVariadicAliasConfig(SuperModelMixin):
-    """Plain model whose alias declares parameters around a variadic one."""
+class PlainParameterAliasConfig(SuperModelMixin):
+    """Plain model whose aliases bind variadic and defaulted type parameters."""
 
     trailing: TrailingColumnField
+    defaulted: DefaultedAlias
 
 
 class PlainClassVariableConfig(SuperModelMixin):

@@ -1,6 +1,6 @@
-from typing import Annotated, TypeVar
+from typing import Annotated
 
-from typing_extensions import TypeAliasType, TypeVarTuple
+from typing_extensions import TypeAliasType, TypeVar, TypeVarTuple
 
 
 class PrimaryKeyAnnotation:
@@ -87,3 +87,8 @@ TrailingColumnField = TrailingAlias[str, bytes, Annotated[str, ColumnOptions(nam
 FreeParameterAlias = TypeAliasType("FreeParameterAlias", Annotated[AliasValue, SearchOptions(weight=17)])
 ScopedAlias = TypeAliasType("ScopedAlias", FreeParameterAlias, type_params=(AliasValue,))
 ScopedColumnField = ScopedAlias[Annotated[str, ColumnOptions(name="caller-argument")]]
+
+DefaultedValue = TypeVar("DefaultedValue", default=Annotated[str, ColumnOptions(name="default-argument")])
+DefaultedAlias = TypeAliasType(
+    "DefaultedAlias", Annotated[DefaultedValue, SearchOptions(weight=19)], type_params=(DefaultedValue,)
+)
