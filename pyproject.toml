@@ -37,6 +37,7 @@ packages = [
 include = ["pydantic_super_model/py.typed"]
 
 [tool.pytest.ini_options]
+filterwarnings = ["error"]
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-q"
 testpaths = ["tests"]
