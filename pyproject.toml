@@ -5,9 +5,9 @@ description = "Lightweight mixin for generic introspection and Annotated field l
 authors = [
     { name = "Julien Kmec", email = "me@julien.dev" }
 ]
-license = {text = "MIT"}
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.11,<3.15"
+requires-python = ">=3.11,<3.16"
 dependencies = [
     "pydantic>=2.13.5",
     "python-generics>=0.2.5",
@@ -37,13 +37,13 @@ packages = [
 include = ["pydantic_super_model/py.typed"]
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 addopts = "-q"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 
 [tool.black]
 line-length = 110
-target-version = ["py311"]
 
 [tool.isort]
 profile = "black"
