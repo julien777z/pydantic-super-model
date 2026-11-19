@@ -28,6 +28,10 @@ jobs:
           poetry run pytest --cov=pydantic_super_model --cov-branch --cov-report=xml
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          use_pypi: true
+          files: coverage.xml
+          disable_search: true
+          plugins: noop
