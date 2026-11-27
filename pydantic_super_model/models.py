@@ -5,7 +5,6 @@ from types import MappingProxyType, UnionType
 from typing import (
     Annotated,
     Any,
-    Final,
     NamedTuple,
     Protocol,
     TypeVar,
@@ -17,8 +16,9 @@ from typing import (
 
 from typing_inspection.typing_objects import is_nodefault, is_typealiastype, is_typevartuple
 
+from pydantic_super_model.sentinels import Missing
+
 MetadataT = TypeVar("MetadataT")
-UNDECLARED_DEFAULT: Final[object] = object()
 
 
 @runtime_checkable
@@ -85,12 +85,12 @@ class BoundAnnotation(NamedTuple):
         }
 
         for parameter in parameters:
-            default = getattr(parameter, "__default__", UNDECLARED_DEFAULT)
+            default = getattr(parameter, "__default__", Missing.ATTRIBUTE)
 
             if (
                 not isinstance(parameter, TypeVar)
                 or parameter in bindings
-                or default is UNDECLARED_DEFAULT
+                or default is Missing.ATTRIBUTE
                 or is_nodefault(default)
             ):
                 continue
