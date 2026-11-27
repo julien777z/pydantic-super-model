@@ -1,0 +1,9 @@
+name: Setup Poetry
+description: Install the latest stable Poetry with the job's Python.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Poetry
+      shell: bash
+      run: python -m pip install poetry

@@ -38,7 +38,7 @@ jobs:
           python-version-file: ".python-version"
 
       - name: Setup Poetry
-        uses: ./.github/actions/setup-poetry
+        uses: ./.github/actions/setup-python-poetry
 
       - name: Bump version
         id: bump
