@@ -1,4 +1,4 @@
-name: Type Check
+name: Lint
 
 on:
   pull_request:
@@ -6,12 +6,16 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  type-check:
-    name: Type Check
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -28,5 +32,11 @@ jobs:
       - name: Install dependencies
         run: poetry install -E dev
 
-      - name: Run Pyright
+      - name: Check formatting with Black
+        run: poetry run black --check .
+
+      - name: Check import order with isort
+        run: poetry run isort --check-only .
+
+      - name: Type check with Pyright
         run: poetry run pyright
