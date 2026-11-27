@@ -1,5 +1,9 @@
 import argparse
 import subprocess
+from typing import Final
+
+COMMITTER_NAME: Final[str] = "github-actions[bot]"
+COMMITTER_EMAIL: Final[str] = "41898282+github-actions[bot]@users.noreply.github.com"
 
 
 def main() -> None:
@@ -14,9 +18,9 @@ def main() -> None:
     commands = (
         (
             "-c",
-            "user.name=github-actions",
+            f"user.name={COMMITTER_NAME}",
             "-c",
-            "user.email=github-actions@github.com",
+            f"user.email={COMMITTER_EMAIL}",
             "commit",
             "pyproject.toml",
             "-m",
