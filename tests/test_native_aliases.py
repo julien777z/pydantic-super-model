@@ -1,8 +1,7 @@
-from typing import get_type_hints
-
 import pytest
 
 from pydantic_super_model import SuperModelMixin, collect_annotated_fields, find_annotation_match
+from pydantic_super_model.annotation_lookup import declared_type_hints
 from tests.models.metadata import ColumnOptions
 from tests.models.native_aliases import (
     NativeAliasConfig,
@@ -61,6 +60,6 @@ class TestNativeAliases:
     def test_recursive_alias_without_match(self) -> None:
         """Test that a recursive alias carrying no requested annotation matches nothing."""
 
-        recursive = get_type_hints(PlainRecursiveAliasConfig, include_extras=True)["recursive"]
+        recursive = declared_type_hints(PlainRecursiveAliasConfig)["recursive"]
 
         assert find_annotation_match(recursive, ("missing-marker",)) is None
