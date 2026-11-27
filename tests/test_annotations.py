@@ -6,6 +6,8 @@ from pydantic import PrivateAttr
 from pydantic_super_model import SuperModelMixin, SuperModelPydanticMixin
 from tests.models.annotated_field_info import build_field_info
 from tests.models.metadata import (
+    OtherAnnotatedField,
+    OtherAnnotation,
     PrimaryKey,
     PrimaryKeyAnnotation,
     ThemeColorField,
@@ -123,29 +125,24 @@ class TestAnnotatedFields:
     def test_matches_any_requested_annotation(self) -> None:
         """Test that it returns fields matching any provided annotation."""
 
-        class _OtherAnnotation:
-            """Metadata marker for another annotated field."""
-
-        other_annotation = Annotated[int, _OtherAnnotation]
-
         class _ModelWithTwoAnnotatedFields(SuperModelPydanticMixin):
             """Model with two different annotated fields."""
 
             first: PrimaryKey
-            second: other_annotation
+            second: OtherAnnotatedField
 
         model = _ModelWithTwoAnnotatedFields(first=1, second=2)
 
-        assert model.get_annotated_fields(_OtherAnnotation) == {
+        assert model.get_annotated_fields(OtherAnnotation) == {
             "second": build_field_info(
                 2,
-                other_annotation,
-                _OtherAnnotation,
-                matched_metadata=(_OtherAnnotation,),
+                OtherAnnotatedField,
+                OtherAnnotation,
+                matched_metadata=(OtherAnnotation,),
             )
         }
 
-        assert model.get_annotated_fields(PrimaryKeyAnnotation, _OtherAnnotation) == {
+        assert model.get_annotated_fields(PrimaryKeyAnnotation, OtherAnnotation) == {
             "first": build_field_info(
                 1,
                 PrimaryKey,
@@ -154,9 +151,9 @@ class TestAnnotatedFields:
             ),
             "second": build_field_info(
                 2,
-                other_annotation,
-                _OtherAnnotation,
-                matched_metadata=(_OtherAnnotation,),
+                OtherAnnotatedField,
+                OtherAnnotation,
+                matched_metadata=(OtherAnnotation,),
             ),
         }
 

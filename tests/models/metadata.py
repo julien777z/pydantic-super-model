@@ -7,6 +7,10 @@ class PrimaryKeyAnnotation:
     """Metadata marking a field as a primary key."""
 
 
+class OtherAnnotation:
+    """Metadata marking another annotated field."""
+
+
 class ThemeColorOptions:
     """Metadata options describing theme color rendering."""
 
@@ -30,6 +34,7 @@ class SearchOptions:
 
 
 PrimaryKey = Annotated[int, PrimaryKeyAnnotation]
+OtherAnnotatedField = Annotated[int, OtherAnnotation]
 ThemeColorField = Annotated[
     str,
     "theme_color",
@@ -84,7 +89,12 @@ TrailingAlias = TypeAliasType(
 )
 TrailingColumnField = TrailingAlias[str, bytes, Annotated[str, ColumnOptions(name="trailing-argument")]]
 
-FreeParameterAlias = TypeAliasType("FreeParameterAlias", Annotated[AliasValue, SearchOptions(weight=17)])
+# A caller's type argument must not bind a parameter the alias never declared, so this alias uses
+# one outside its scope, which the type system rejects.
+FreeParameterAlias = TypeAliasType(
+    "FreeParameterAlias",
+    Annotated[AliasValue, SearchOptions(weight=17)],  # pyright: ignore[reportGeneralTypeIssues]
+)
 ScopedAlias = TypeAliasType("ScopedAlias", FreeParameterAlias, type_params=(AliasValue,))
 ScopedColumnField = ScopedAlias[Annotated[str, ColumnOptions(name="caller-argument")]]
 
