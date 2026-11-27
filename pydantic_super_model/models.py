@@ -2,12 +2,33 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from types import MappingProxyType, UnionType
-from typing import Annotated, Any, Final, NamedTuple, TypeVar, Union, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Final,
+    NamedTuple,
+    Protocol,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    runtime_checkable,
+)
 
 from typing_inspection.typing_objects import is_nodefault, is_typealiastype, is_typevartuple
 
 MetadataT = TypeVar("MetadataT")
 UNDECLARED_DEFAULT: Final[object] = object()
+
+
+@runtime_checkable
+class ParameterizedAnnotation(Protocol):
+    """Describe a generic annotation that substitutes arguments for its type parameters."""
+
+    __parameters__: tuple[object, ...]
+
+    def __getitem__(self, arguments: tuple[object, ...], /) -> object:
+        """Return the annotation with its type parameters replaced by the arguments."""
 
 
 def matches_requested_annotation(candidate: object, annotations: tuple[object, ...]) -> bool:
@@ -64,7 +85,12 @@ class BoundAnnotation(NamedTuple):
         for parameter in parameters:
             default = getattr(parameter, "__default__", UNDECLARED_DEFAULT)
 
-            if parameter in bindings or default is UNDECLARED_DEFAULT or is_nodefault(default):
+            if (
+                not isinstance(parameter, TypeVar)
+                or parameter in bindings
+                or default is UNDECLARED_DEFAULT
+                or is_nodefault(default)
+            ):
                 continue
 
             bindings[parameter] = BoundAnnotation(
@@ -86,17 +112,21 @@ class BoundAnnotation(NamedTuple):
     def concrete_annotation(self) -> object:
         """Return the annotation with its bound type parameters substituted."""
 
-        if get_origin(self.annotation) is None:
-            return self.annotation
+        annotation = self.annotation
 
-        parameters = getattr(self.annotation, "__parameters__", ())
+        if get_origin(annotation) is None or not isinstance(annotation, ParameterizedAnnotation):
+            return annotation
 
-        if not any(parameter in self.bindings for parameter in parameters) or not all(
-            isinstance(parameter, TypeVar) for parameter in parameters
+        parameters = tuple(
+            parameter for parameter in annotation.__parameters__ if isinstance(parameter, TypeVar)
+        )
+
+        if len(parameters) != len(annotation.__parameters__) or not any(
+            parameter in self.bindings for parameter in parameters
         ):
-            return self.annotation
+            return annotation
 
-        return self.annotation[
+        return annotation[
             tuple(
                 (
                     self.bindings[parameter].resolved().concrete_annotation()
