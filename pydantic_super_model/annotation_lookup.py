@@ -14,7 +14,7 @@ def find_annotation_match(
 ) -> AnnotatedFieldInfo | None:
     """Return the first matched annotation carried by a type hint."""
 
-    return BoundAnnotation(annotation_type).find_match(annotations)
+    return BoundAnnotation(annotation=annotation_type, bindings={}).find_match(annotations)
 
 
 @cache
@@ -40,10 +40,10 @@ def model_argument_bindings(model_type: type[object]) -> Mapping[TypeVar, BoundA
             continue
 
         parameters = origin.__pydantic_generic_metadata__["parameters"]
-        enclosing_bindings = MappingProxyType(dict(bindings))
+        enclosing_bindings = dict(bindings)
 
         for parameter, argument in zip(parameters, generic_metadata["args"]):
-            bindings.setdefault(parameter, BoundAnnotation(argument, enclosing_bindings))
+            bindings.setdefault(parameter, BoundAnnotation(annotation=argument, bindings=enclosing_bindings))
 
     return MappingProxyType(bindings)
 
@@ -53,12 +53,14 @@ def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
 
     if issubclass(model_type, BaseModel):
         return {
-            field_name: FieldDeclaration(tuple(field_info.metadata), field_info.annotation)
+            field_name: FieldDeclaration(
+                metadata=tuple(field_info.metadata), annotation=field_info.annotation
+            )
             for field_name, field_info in model_type.model_fields.items()
         }
 
     return {
-        field_name: FieldDeclaration((), annotation)
+        field_name: FieldDeclaration(metadata=(), annotation=annotation)
         for field_name, annotation in declared_type_hints(model_type).items()
         if get_origin(annotation) is not ClassVar
     }
@@ -79,7 +81,7 @@ def collect_annotated_declarations(
     result: dict[str, AnnotatedFieldInfo] = {}
 
     for field_name, field_type in declared_type_hints(model_type).items():
-        annotation_match = BoundAnnotation(field_type, bindings).find_match(annotations)
+        annotation_match = BoundAnnotation(annotation=field_type, bindings=bindings).find_match(annotations)
 
         if annotation_match is None:
             continue
