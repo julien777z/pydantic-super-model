@@ -17,15 +17,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
 
-      - name: Setup Python and Poetry
-        uses: ./.github/actions/setup-python-poetry
+      - name: Set up Python
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-          post_setup_command: "poetry install -E dev"
+
+      - name: Setup Poetry
+        uses: ./.github/actions/setup-poetry
+
+      - name: Install dependencies
+        run: poetry install -E dev
 
       - name: Test with Pytest
-        run: |
-          poetry run pytest --cov=pydantic_super_model --cov-branch --cov-report=xml
+        run: poetry run pytest --cov=pydantic_super_model --cov-branch --cov-report=xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v7
