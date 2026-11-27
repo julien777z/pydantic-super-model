@@ -10,11 +10,13 @@ type NativeTaggedColumnField = NativeTagged[Annotated[str, ColumnOptions(name="n
 # Lookup must stop at an alias it is already expanding, so these two aliases refer to themselves,
 # which the type system rejects.
 type Recursive = Annotated[
-    Recursive | int, ColumnOptions(name="recursive")
-]  # pyright: ignore[reportGeneralTypeIssues]
-type Expanding[T] = Annotated[T, ColumnOptions(name="expanding")] | Expanding[
-    list[T]
-]  # pyright: ignore[reportGeneralTypeIssues]
+    Recursive | int,  # pyright: ignore[reportGeneralTypeIssues]
+    ColumnOptions(name="recursive"),
+]
+type Expanding[T] = (
+    Annotated[T, ColumnOptions(name="expanding")]
+    | Expanding[list[T]]  # pyright: ignore[reportGeneralTypeIssues]
+)
 type Identity[T] = T
 type AliasLoop = Identity[AliasLoop]
 
