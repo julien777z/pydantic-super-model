@@ -13,10 +13,12 @@ type Recursive = Annotated[
     Recursive | int,  # pyright: ignore[reportGeneralTypeIssues]
     ColumnOptions(name="recursive"),
 ]
+
 type Expanding[T] = (
     Annotated[T, ColumnOptions(name="expanding")]
     | Expanding[list[T]]  # pyright: ignore[reportGeneralTypeIssues]
 )
+
 type Identity[T] = T
 type AliasLoop = Identity[AliasLoop]
 

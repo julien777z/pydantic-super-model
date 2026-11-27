@@ -69,6 +69,7 @@ class BoundAnnotation(NamedTuple):
             (index for index, parameter in enumerate(parameters) if is_typevartuple(parameter)),
             len(parameters),
         )
+
         leading = parameters[:variadic_index]
         trailing = parameters[variadic_index + 1 :]
 
@@ -76,6 +77,7 @@ class BoundAnnotation(NamedTuple):
             (*leading, *trailing),
             (*arguments[: len(leading)], *arguments[len(arguments) - len(trailing) :]),
         )
+
         bindings = {
             parameter: BoundAnnotation(argument, self.bindings, self.expansion_trail)
             for parameter, argument in positional_pairs

@@ -113,6 +113,7 @@ class TestAnnotatedFields:
                 matched_metadata=(PrimaryKeyAnnotation,),
             )
         }
+
         assert annotated_user.get_annotated_fields(PrimaryKeyAnnotation) == {
             "id": build_field_info(
                 2,
@@ -222,6 +223,7 @@ class TestAnnotatedFields:
             matched_metadata[0],
             matched_metadata=matched_metadata,
         )
+
         assert len(matched_metadata) == 1
         assert isinstance(matched_metadata[0], ThemeColorOptions)
         assert matched_metadata[0].palette == "northern-lights"
@@ -308,7 +310,7 @@ class TestAnnotatedFieldValue:
 
         assert user.get_annotated_field_value(PrimaryKey, allow_undefined=True) is None
 
-    def test_raises_when_value_is_none_and_none_is_not_allowed(self) -> None:
+    def test_raises_on_disallowed_none_value(self) -> None:
         """Test that it raises when the matched field value is None."""
 
         class _OptionalPrimaryKeyModel(SuperModelPydanticMixin):
