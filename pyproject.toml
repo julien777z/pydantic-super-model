@@ -23,6 +23,7 @@ dev = [
     "black>=26.10.1",
     "isort>=9.0.2",
     "pylint>=4.1.4",
+    "pyright>=1.1.414",
 ]
 
 [dependency-groups]
@@ -49,6 +50,10 @@ asyncio_mode = "auto"
 
 [tool.black]
 line-length = 110
+
+[tool.pyright]
+include = ["pydantic_super_model", "tests", ".github/scripts"]
+typeCheckingMode = "strict"
 
 [tool.isort]
 profile = "black"
