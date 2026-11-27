@@ -20,14 +20,18 @@ Repository = "https://github.com/julien777z/pydantic-super-model"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=9.1.1",
-    "pytest-asyncio>=1.4.0",
-    "coverage>=7.16.0",
+    "black>=26.10.1",
+    "isort>=9.0.2",
+    "pylint>=4.1.4",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "coverage>=7.17.5",
     "pytest-cov>=7.1.0",
-    "black>=26.5.1",
-    "isort>=9.0.1",
-    "pylint>=4.0.8",
-    "typing-extensions>=4.14.1",
+    "typing-extensions>=4.16.0",
 ]
 
 [tool.poetry]
@@ -59,5 +63,5 @@ disable = [
 max-line-length = 110
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"
