@@ -6,6 +6,4 @@ runs:
   steps:
     - name: Install Poetry
       shell: bash
-      run: |
-        pipx install poetry==2.5.2
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      run: pipx install poetry==2.5.2
