@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/actions/setup-poetry
 
       - name: Install dependencies
-        run: poetry install -E dev
+        run: poetry install
 
       - name: Test with Pytest
         run: poetry run pytest --cov=pydantic_super_model --cov-branch --cov-report=xml
