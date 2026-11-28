@@ -1,13 +1,13 @@
 import pytest
 
 from pydantic_super_model import SuperModelMixin, collect_annotated_fields, find_annotation_match
+from pydantic_super_model.annotation_lookup import declared_type_hints
 from tests.models.metadata import ColumnOptions
 from tests.models.native_aliases import (
     NativeAliasConfig,
     NativeColumnField,
     PlainNativeAliasConfig,
     PlainRecursiveAliasConfig,
-    Recursive,
 )
 
 
@@ -36,9 +36,11 @@ class TestNativeAliases:
         """Test that looking up a type statement alias returns the alias with its metadata."""
 
         field = collect_annotated_fields(NativeAliasConfig, NativeColumnField)["column"]
+        (column,) = field.metadata
 
         assert field.annotation is NativeColumnField
-        assert [item.name for item in field.metadata] == ["native"]
+        assert isinstance(column, ColumnOptions)
+        assert column.name == "native"
 
     @pytest.mark.parametrize(
         ("field", "names"),
@@ -58,4 +60,6 @@ class TestNativeAliases:
     def test_recursive_alias_without_match(self) -> None:
         """Test that a recursive alias carrying no requested annotation matches nothing."""
 
-        assert find_annotation_match(Recursive, ("missing-marker",)) is None
+        recursive = declared_type_hints(PlainRecursiveAliasConfig)["recursive"]
+
+        assert find_annotation_match(recursive, ("missing-marker",)) is None

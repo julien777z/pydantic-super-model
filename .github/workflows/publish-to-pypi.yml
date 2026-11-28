@@ -5,13 +5,17 @@ on:
     inputs:
       version_increment:
         description: Version increment type
-        required: true
+        required: false
         type: choice
         default: patch
         options:
           - patch
           - minor
           - major
+
+concurrency:
+  group: publish-to-pypi
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -26,47 +30,35 @@ jobs:
       url: https://pypi.org/project/pydantic-super-model/
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Setup Python and Poetry
-        uses: ./.github/actions/setup-python-poetry
+      - name: Set up Python
+        uses: actions/setup-python@v7
         with:
-          post_setup_command: "poetry install --no-interaction --no-root"
+          python-version-file: ".python-version"
+
+      - name: Setup Poetry
+        uses: ./.github/actions/setup-poetry
 
       - name: Bump version
         id: bump
-        shell: bash
-        run: |
-          set -euo pipefail
-          current=$(poetry version --short)
-          poetry version "${{ github.event.inputs.version_increment }}"
-          newv=$(poetry version --short)
-          echo "current=$current" >> "$GITHUB_OUTPUT"
-          echo "new=$newv" >> "$GITHUB_OUTPUT"
+        env:
+          VERSION_INCREMENT: ${{ github.event.inputs.version_increment }}
+        run: python .github/scripts/bump_version.py "$VERSION_INCREMENT"
 
       - name: Build package
         run: poetry build
 
+      - name: Commit, tag, and push the version bump
+        env:
+          RELEASE_VERSION: ${{ steps.bump.outputs.new }}
+        run: python .github/scripts/commit_release.py "$RELEASE_VERSION"
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
-      - name: Commit version bump and tag
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git commit -am "chore(release): bump version to ${{ steps.bump.outputs.new }}"
-          git tag "${{ steps.bump.outputs.new }}"
-
-      - name: Push changes and tags
-        shell: bash
-        run: |
-          git push origin HEAD
-          git push origin --tags
-
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: "${{ steps.bump.outputs.new }}"
           name: "Release v${{ steps.bump.outputs.new }}"

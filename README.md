@@ -245,4 +245,5 @@ poetry run pytest                        # run the tests
 poetry run black .                       # format
 poetry run isort .                       # sort imports
 poetry run pylint pydantic_super_model   # lint
+poetry run pyright                       # type check
 ```

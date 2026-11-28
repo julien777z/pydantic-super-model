@@ -5,9 +5,9 @@ description = "Lightweight mixin for generic introspection and Annotated field l
 authors = [
     { name = "Julien Kmec", email = "me@julien.dev" }
 ]
-license = {text = "MIT"}
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.11,<3.15"
+requires-python = ">=3.11,<3.16"
 dependencies = [
     "pydantic>=2.13.5",
     "python-generics>=0.2.5",
@@ -20,14 +20,19 @@ Repository = "https://github.com/julien777z/pydantic-super-model"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=9.1.1",
-    "pytest-asyncio>=1.4.0",
-    "coverage>=7.16.0",
+    "black>=26.10.1",
+    "isort>=9.0.2",
+    "pylint>=4.1.4",
+    "pyright>=1.1.414",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "coverage>=7.17.5",
     "pytest-cov>=7.1.0",
-    "black>=26.5.1",
-    "isort>=9.0.1",
-    "pylint>=4.0.8",
-    "typing-extensions>=4.14.1",
+    "typing-extensions>=4.16.0",
 ]
 
 [tool.poetry]
@@ -37,13 +42,18 @@ packages = [
 include = ["pydantic_super_model/py.typed"]
 
 [tool.pytest.ini_options]
+filterwarnings = ["error"]
+asyncio_default_fixture_loop_scope = "function"
 addopts = "-q"
 testpaths = ["tests"]
 asyncio_mode = "auto"
 
 [tool.black]
 line-length = 110
-target-version = ["py311"]
+
+[tool.pyright]
+include = ["pydantic_super_model", "tests", ".github/scripts"]
+typeCheckingMode = "strict"
 
 [tool.isort]
 profile = "black"
@@ -58,5 +68,5 @@ disable = [
 max-line-length = 110
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=2.0.0"]
 build-backend = "poetry.core.masonry.api"

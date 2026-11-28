@@ -1,0 +1,42 @@
+name: Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: ".python-version"
+
+      - name: Setup Poetry
+        uses: ./.github/actions/setup-poetry
+
+      - name: Install dependencies
+        run: poetry install -E dev
+
+      - name: Check formatting with Black
+        run: poetry run black --check .
+
+      - name: Check import order with isort
+        run: poetry run isort --check-only .
+
+      - name: Type check with Pyright
+        run: poetry run pyright

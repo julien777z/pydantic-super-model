@@ -1,33 +1,43 @@
 name: Run Tests via Pytest
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
-    branches:
-      - "**"
+    branches: [main]
 
 jobs:
   build:
     name: Build and Run Tests
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14", "3.15"]
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Setup Python and Poetry
-        uses: ./.github/actions/setup-python-poetry
+      - name: Set up Python
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-          post_setup_command: "poetry install -E dev"
+
+      - name: Setup Poetry
+        uses: ./.github/actions/setup-poetry
+
+      - name: Install dependencies
+        run: poetry install
 
       - name: Test with Pytest
-        run: |
-          poetry run pytest --cov=pydantic_super_model --cov-branch --cov-report=xml
+        run: poetry run pytest --cov=pydantic_super_model --cov-branch --cov-report=xml
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          disable_search: true
+          plugins: noop
+          fail_ci_if_error: true

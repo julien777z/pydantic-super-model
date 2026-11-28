@@ -7,6 +7,10 @@ class PrimaryKeyAnnotation:
     """Metadata marking a field as a primary key."""
 
 
+class OtherAnnotation:
+    """Metadata marking another annotated field."""
+
+
 class ThemeColorOptions:
     """Metadata options describing theme color rendering."""
 
@@ -30,11 +34,13 @@ class SearchOptions:
 
 
 PrimaryKey = Annotated[int, PrimaryKeyAnnotation]
+OtherAnnotatedField = Annotated[int, OtherAnnotation]
 ThemeColorField = Annotated[
     str,
     "theme_color",
     ThemeColorOptions(palette="northern-lights", allow_gradients=True),
 ]
+
 BareColumnField = Annotated[str, ColumnOptions(name="bare"), SearchOptions(weight=1)]
 OptionalColumnField = Annotated[str, ColumnOptions(name="optional")]
 NestedColumnField = Annotated[Annotated[str, ColumnOptions(name="inner")], ColumnOptions(name="outer")]
@@ -44,6 +50,7 @@ AliasedColumnField = TypeAliasType("AliasedColumnField", Annotated[str, ColumnOp
 NestedAliasedColumnField = TypeAliasType(
     "NestedAliasedColumnField", Annotated[AliasedColumnField, SearchOptions(weight=3)]
 )
+
 AliasValue = TypeVar("AliasValue")
 GenericAliasedColumnField = TypeAliasType(
     "GenericAliasedColumnField",
@@ -60,6 +67,7 @@ NestedIdentityColumnField = IdentityAlias[
 TaggedAlias = TypeAliasType(
     "TaggedAlias", Annotated[AliasValue, SearchOptions(weight=9)], type_params=(AliasValue,)
 )
+
 TaggedColumnField = TaggedAlias[Annotated[str, ColumnOptions(name="tagged-argument")]]
 
 ForwardedAlias = TypeAliasType("ForwardedAlias", IdentityAlias[AliasValue], type_params=(AliasValue,))
@@ -69,6 +77,7 @@ ForwardedTaggedAlias = TypeAliasType(
     IdentityAlias[Annotated[AliasValue, SearchOptions(weight=11)]],
     type_params=(AliasValue,),
 )
+
 ForwardedTaggedColumnField = ForwardedTaggedAlias[
     Annotated[str, ColumnOptions(name="forwarded-tagged-argument")]
 ]
@@ -82,9 +91,16 @@ AliasValues = TypeVarTuple("AliasValues")
 TrailingAlias = TypeAliasType(
     "TrailingAlias", Annotated[AliasValue, SearchOptions(weight=13)], type_params=(AliasValues, AliasValue)
 )
+
 TrailingColumnField = TrailingAlias[str, bytes, Annotated[str, ColumnOptions(name="trailing-argument")]]
 
-FreeParameterAlias = TypeAliasType("FreeParameterAlias", Annotated[AliasValue, SearchOptions(weight=17)])
+# A caller's type argument must not bind a parameter the alias never declared, so this alias uses
+# one outside its scope, which the type system rejects.
+FreeParameterAlias = TypeAliasType(
+    "FreeParameterAlias",
+    Annotated[AliasValue, SearchOptions(weight=17)],  # pyright: ignore[reportGeneralTypeIssues]
+)
+
 ScopedAlias = TypeAliasType("ScopedAlias", FreeParameterAlias, type_params=(AliasValue,))
 ScopedColumnField = ScopedAlias[Annotated[str, ColumnOptions(name="caller-argument")]]
 

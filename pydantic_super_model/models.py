@@ -1,13 +1,35 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
-from types import MappingProxyType, UnionType
-from typing import Annotated, Any, Final, NamedTuple, TypeVar, Union, get_args, get_origin
+from types import UnionType
+from typing import (
+    Annotated,
+    Any,
+    NamedTuple,
+    Protocol,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+    runtime_checkable,
+)
 
+from pydantic import BaseModel, ConfigDict
 from typing_inspection.typing_objects import is_nodefault, is_typealiastype, is_typevartuple
 
+from pydantic_super_model.sentinels import Missing
+
 MetadataT = TypeVar("MetadataT")
-UNDECLARED_DEFAULT: Final[object] = object()
+
+
+@runtime_checkable
+class ParameterizedAnnotation(Protocol):
+    """Describe a generic annotation that substitutes arguments for its type parameters."""
+
+    __parameters__: tuple[object, ...]
+
+    def __getitem__(self, arguments: tuple[object, ...], /) -> object:
+        """Return the annotation with its type parameters replaced by the arguments."""
 
 
 def matches_requested_annotation(candidate: object, annotations: tuple[object, ...]) -> bool:
@@ -33,11 +55,13 @@ class AnnotatedFieldInfo(NamedTuple):
     matched_metadata: tuple[object, ...]
 
 
-class BoundAnnotation(NamedTuple):
+class BoundAnnotation(BaseModel):
     """Store an annotation with the lexical bindings and alias expansions that supplied it."""
 
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
     annotation: object
-    bindings: Mapping[TypeVar, BoundAnnotation] = MappingProxyType({})
+    bindings: Mapping[TypeVar, BoundAnnotation]
     expansion_trail: frozenset[int] = frozenset()
 
     def argument_bindings(self, parameters: tuple[object, ...]) -> dict[TypeVar, BoundAnnotation]:
@@ -48,6 +72,7 @@ class BoundAnnotation(NamedTuple):
             (index for index, parameter in enumerate(parameters) if is_typevartuple(parameter)),
             len(parameters),
         )
+
         leading = parameters[:variadic_index]
         trailing = parameters[variadic_index + 1 :]
 
@@ -55,20 +80,30 @@ class BoundAnnotation(NamedTuple):
             (*leading, *trailing),
             (*arguments[: len(leading)], *arguments[len(arguments) - len(trailing) :]),
         )
+
         bindings = {
-            parameter: BoundAnnotation(argument, self.bindings, self.expansion_trail)
+            parameter: BoundAnnotation(
+                annotation=argument, bindings=self.bindings, expansion_trail=self.expansion_trail
+            )
             for parameter, argument in positional_pairs
             if isinstance(parameter, TypeVar)
         }
 
         for parameter in parameters:
-            default = getattr(parameter, "__default__", UNDECLARED_DEFAULT)
+            default = getattr(parameter, "__default__", Missing.ATTRIBUTE)
 
-            if parameter in bindings or default is UNDECLARED_DEFAULT or is_nodefault(default):
+            if (
+                not isinstance(parameter, TypeVar)
+                or parameter in bindings
+                or default is Missing.ATTRIBUTE
+                or is_nodefault(default)
+            ):
                 continue
 
             bindings[parameter] = BoundAnnotation(
-                default, MappingProxyType(dict(bindings)), self.expansion_trail
+                annotation=default,
+                bindings=dict(bindings),
+                expansion_trail=self.expansion_trail,
             )
 
         return bindings
@@ -86,17 +121,21 @@ class BoundAnnotation(NamedTuple):
     def concrete_annotation(self) -> object:
         """Return the annotation with its bound type parameters substituted."""
 
-        if get_origin(self.annotation) is None:
-            return self.annotation
+        annotation = self.annotation
 
-        parameters = getattr(self.annotation, "__parameters__", ())
+        if get_origin(annotation) is None or not isinstance(annotation, ParameterizedAnnotation):
+            return annotation
 
-        if not any(parameter in self.bindings for parameter in parameters) or not all(
-            isinstance(parameter, TypeVar) for parameter in parameters
+        parameters = tuple(
+            parameter for parameter in annotation.__parameters__ if isinstance(parameter, TypeVar)
+        )
+
+        if len(parameters) != len(annotation.__parameters__) or not any(
+            parameter in self.bindings for parameter in parameters
         ):
-            return self.annotation
+            return annotation
 
-        return self.annotation[
+        return annotation[
             tuple(
                 (
                     self.bindings[parameter].resolved().concrete_annotation()
@@ -116,7 +155,7 @@ class BoundAnnotation(NamedTuple):
         while get_origin(bound.annotation) is Annotated:
             inner_type, *items = get_args(bound.annotation)
             metadata = (*items, *metadata)
-            bound = bound._replace(annotation=inner_type).resolved()
+            bound = bound.model_copy(update={"annotation": inner_type}).resolved()
 
         return metadata, bound
 
@@ -134,13 +173,13 @@ class BoundAnnotation(NamedTuple):
         if is_typealiastype(alias):
             if id(annotation) not in bound.expansion_trail:
                 yield from BoundAnnotation(
-                    alias.__value__,
-                    bound.argument_bindings(alias.__type_params__),
-                    bound.expansion_trail | {id(annotation)},
+                    annotation=alias.__value__,
+                    bindings=bound.argument_bindings(alias.__type_params__),
+                    expansion_trail=bound.expansion_trail | {id(annotation)},
                 ).walk()
         elif origin in (Union, UnionType):
             for member in get_args(annotation):
-                yield from bound._replace(annotation=member).walk()
+                yield from bound.model_copy(update={"annotation": member}).walk()
         elif origin is Annotated:
             yield from bound.unwrapped()[1].walk()
 
@@ -169,8 +208,10 @@ class BoundAnnotation(NamedTuple):
         return None
 
 
-class FieldDeclaration(NamedTuple):
+class FieldDeclaration(BaseModel):
     """Store a field's extracted metadata and annotation holding nested metadata."""
+
+    model_config = ConfigDict(frozen=True)
 
     metadata: tuple[object, ...]
     annotation: object
@@ -180,6 +221,9 @@ class FieldDeclaration(NamedTuple):
 
         return tuple(
             item
-            for item in (*self.metadata, *BoundAnnotation(self.annotation).nested_metadata())
+            for item in (
+                *self.metadata,
+                *BoundAnnotation(annotation=self.annotation, bindings={}).nested_metadata(),
+            )
             if isinstance(item, metadata_types)
         )
