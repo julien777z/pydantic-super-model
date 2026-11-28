@@ -149,24 +149,60 @@ class BoundAnnotation(NamedTuple):
 
         return tuple(item for node in self.walk() for item in node.unwrapped()[0])
 
-    def find_match(self, annotations: tuple[object, ...]) -> AnnotatedFieldInfo | None:
-        """Return the outermost node matching a requested annotation."""
+    def candidates(self) -> tuple[AnnotationCandidate, ...]:
+        """Return each walked node as a match candidate, outermost first."""
+
+        candidates: list[AnnotationCandidate] = []
 
         for node in self.walk():
             metadata = node.unwrapped()[0]
-            matched_metadata = tuple(
-                item for item in metadata if matches_requested_annotation(item, annotations)
+            reported_metadata = (
+                metadata if get_origin(node.annotation) is Annotated else node.nested_metadata()
             )
 
-            if not matched_metadata and not matches_requested_annotation(node.annotation, annotations):
-                continue
+            candidates.append(
+                AnnotationCandidate(node.annotation, metadata, node.concrete_annotation(), reported_metadata)
+            )
 
-            if get_origin(node.annotation) is not Annotated:
-                metadata = node.nested_metadata()
+        return tuple(candidates)
 
-            return AnnotatedFieldInfo(None, node.concrete_annotation(), metadata, matched_metadata)
+    def find_match(self, annotations: tuple[object, ...]) -> AnnotatedFieldInfo | None:
+        """Return the outermost node matching a requested annotation."""
 
-        return None
+        return first_candidate_match(self.candidates(), annotations)
+
+
+class AnnotationCandidate(NamedTuple):
+    """Store one walked annotation node and the metadata a match on it reports."""
+
+    annotation: object
+    metadata: tuple[object, ...]
+    concrete_annotation: object
+    reported_metadata: tuple[object, ...]
+
+    def match(self, annotations: tuple[object, ...]) -> AnnotatedFieldInfo | None:
+        """Return this node's match for a requested annotation, or None."""
+
+        matched_metadata = tuple(
+            item for item in self.metadata if matches_requested_annotation(item, annotations)
+        )
+
+        if not matched_metadata and not matches_requested_annotation(self.annotation, annotations):
+            return None
+
+        return AnnotatedFieldInfo(None, self.concrete_annotation, self.reported_metadata, matched_metadata)
+
+
+def first_candidate_match(
+    candidates: tuple[AnnotationCandidate, ...],
+    annotations: tuple[object, ...],
+) -> AnnotatedFieldInfo | None:
+    """Return the first candidate's match for a requested annotation, or None."""
+
+    return next(
+        (match for candidate in candidates if (match := candidate.match(annotations)) is not None),
+        None,
+    )
 
 
 class FieldDeclaration(NamedTuple):

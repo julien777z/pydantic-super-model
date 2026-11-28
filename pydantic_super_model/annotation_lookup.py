@@ -5,7 +5,13 @@ from typing import ClassVar, TypeVar, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
-from pydantic_super_model.models import AnnotatedFieldInfo, BoundAnnotation, FieldDeclaration
+from pydantic_super_model.models import (
+    AnnotatedFieldInfo,
+    AnnotationCandidate,
+    BoundAnnotation,
+    FieldDeclaration,
+    first_candidate_match,
+)
 
 
 def find_annotation_match(
@@ -48,6 +54,20 @@ def model_argument_bindings(model_type: type[object]) -> Mapping[TypeVar, BoundA
     return MappingProxyType(bindings)
 
 
+@cache
+def declaration_candidates(model_type: type[object]) -> Mapping[str, tuple[AnnotationCandidate, ...]]:
+    """Return each declared type hint's match candidates, built once per class."""
+
+    bindings = model_argument_bindings(model_type)
+
+    return MappingProxyType(
+        {
+            field_name: BoundAnnotation(field_type, bindings).candidates()
+            for field_name, field_type in declared_type_hints(model_type).items()
+        }
+    )
+
+
 def field_declarations(model_type: type[object]) -> dict[str, FieldDeclaration]:
     """Return each declared field's extracted metadata and annotation, in declaration order."""
 
@@ -75,11 +95,10 @@ def collect_annotated_declarations(
 
     is_class = isinstance(model, type)
     model_type = model if is_class else type(model)
-    bindings = model_argument_bindings(model_type)
     result: dict[str, AnnotatedFieldInfo] = {}
 
-    for field_name, field_type in declared_type_hints(model_type).items():
-        annotation_match = BoundAnnotation(field_type, bindings).find_match(annotations)
+    for field_name, candidates in declaration_candidates(model_type).items():
+        annotation_match = first_candidate_match(candidates, annotations)
 
         if annotation_match is None:
             continue
